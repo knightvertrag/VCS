@@ -1,5 +1,4 @@
 #!/bin/bash
 
-cd ..
-cd bin || echo "Error"
+cd ~/imperium/bin || echo "Error"
 ./main "$1"

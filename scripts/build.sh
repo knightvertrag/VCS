@@ -1,8 +1,8 @@
 #!/bin/bash
-
+mkdir -p ~/imperium/bin
 cd ..
 make
-cd bin || echo "error"
+cd ~/imperium/bin || echo "error"
 chmod +x main
 
 
