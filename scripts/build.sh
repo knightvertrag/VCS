@@ -4,5 +4,5 @@ cd ..
 make
 cd ~/imperium/bin || echo "error"
 chmod +x main
-
+echo "export PATH=""$HOME"/imperium/bin:"$PATH""" >> ~/.bashrc
 
