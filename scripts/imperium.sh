@@ -4,4 +4,5 @@ DIR=$PWD
 cd ~/imperium/bin || echo "Error"
 ./main "$1"
 cd $DIR
+export dir=$DIR
 }
