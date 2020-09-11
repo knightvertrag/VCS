@@ -3,8 +3,49 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <filesystem>
+#include <vector>
+#include <algorithm>
 
 namespace fs = std::filesystem;
+
+int toBeIgnored(std::string dir, std::string path)
+{
+    std::ifstream readIgnoreFile,readAddLog;
+    std::string filename;
+    std::vector<std::string> filenames;
+    std::vector<std::string> addedFilenames;
+
+    readIgnoreFile.open(dir+"/.imperiumignore");
+    readAddLog.open(dir+"/.imperium/add.log");
+
+    if(readIgnoreFile.is_open())
+    {
+        while(!readIgnoreFile.eof())
+        {
+            std::getline(readIgnoreFile,filename);
+            filenames.push_back(filename);
+        }
+    }
+
+    if(readAddLog.is_open())
+    {
+        while(!readAddLog.eof())
+        {
+            std::getline(readAddLog,filename);
+            if(filename.length()>4)
+            {
+                addedFilenames.push_back(filename.substr(1,filename.length()-4));
+            }
+        }
+    }
+
+    if(std::find(filenames.begin(),filenames.end(),path)!=filenames.end() 
+    || std::find(addedFilenames.begin(),addedFilenames.end(),path)!=addedFilenames.end()
+    )
+    return 1;
+    
+    return 0;
+}
 
 void init(std::string path)
 {
@@ -40,77 +81,90 @@ void init(std::string path)
 void add(std::string path, char **argv)
 {   
     struct stat buffer;   
-    if(stat((path+"/.imperium").c_str(), &buffer)==0){
-    std::ofstream addFile;
-    addFile.open (path+"/.imperium/add.log");
-    if(strcmp(argv[2], ".")==0)
+    if(stat((path+"/.imperium").c_str(), &buffer)==0)
     {
-        struct stat s;
-        for(auto& p: fs::recursive_directory_iterator(path)){
-            if(stat (p.path().c_str(), &s) == 0){
-            if( s.st_mode & S_IFREG )
-            {
-                addFile << p.path() << "-f\n";
-                std::cout << "added file: " << p.path() << "\n";
-            }
-            else if( s.st_mode & S_IFDIR )
-            {
-                 addFile << p.path() << "-d\n";
-                 std::cout << "added directory: " << p.path() << "\n";   
-            }
-            else{
-                continue;
-            }
-            
-            }   
-        }
+        std::ofstream addFile;
 
-        addFile.close();
-    }
-    else
-    {   struct stat s;
-        if(stat ((path+argv[2]).c_str(), &s) == 0){
-            path += argv[2];
-            if( s.st_mode & S_IFDIR )
+        addFile.open (path+"/.imperium/add.log",std::ios_base::app);
+
+        if(strcmp(argv[2], ".")==0)
+        {
+            struct stat s;
+            for(auto& p: fs::recursive_directory_iterator(path))
             {
-                 for(auto& p: fs::recursive_directory_iterator(path)){
-                    if(stat (p.path().c_str(), &s) == 0){
-                        if( s.st_mode & S_IFREG )
-                        {
-                            addFile << p.path() << "-f\n";
-                            std::cout << "added file: " << p.path() << "\n";
-                        }
-                        else if( s.st_mode & S_IFDIR )
-                        {
-                            addFile << p.path() << "-d\n";
-                            std::cout << "added directory: " << p.path() << "\n";   
-                        }
-                        else{
-                            continue;
-                        }
-                    }   
-                }
+                if (toBeIgnored(path,p.path()) || p.path()==(path+"/.imperiumignore"))
+                continue;
+                if(stat (p.path().c_str(), &s) == 0)
+                {
+                    if( s.st_mode & S_IFREG )
+                    {
+                        addFile << p.path() << "-f\n";
+                        std::cout << "added file: " << p.path() << "\n";
+                    }
+                    else if( s.st_mode & S_IFDIR )
+                    {
+                        addFile << p.path() << "-d\n";
+                        std::cout << "added directory: " << p.path() << "\n";   
+                    }
+                    else{
+                        continue;
+                    }
+                }   
             }
-            else if( s.st_mode & S_IFREG )
-            {
-                addFile << path+argv[2] << "-f\n";
-                std::cout << "added file: "<< path+argv[2]<< "\n";
-                addFile.close();
+
+            addFile.close();
+        }
+        else
+        {   struct stat s;
+            if(stat ((path+argv[2]).c_str(), &s) == 0){
+                path += argv[2];
+                if( s.st_mode & S_IFDIR )
+                {
+                    for(auto& p: fs::recursive_directory_iterator(path))
+                    {
+                        if (toBeIgnored(path,p.path()) || p.path()==(path+"/.imperiumignore"))
+                        continue;
+                        if(stat (p.path().c_str(), &s) == 0)
+                        {
+                            if( s.st_mode & S_IFREG )
+                            {
+                                addFile << p.path() << "-f\n";
+                                std::cout << "added file: " << p.path() << "\n";
+                            }
+                            else if( s.st_mode & S_IFDIR )
+                            {
+                                addFile << p.path() << "-d\n";
+                                std::cout << "added directory: " << p.path() << "\n";   
+                            }
+                            else{
+                                continue;
+                            }
+                        }   
+                    }
+                }
+                else if( s.st_mode & S_IFREG )
+                {
+                    if (toBeIgnored(path,path+argv[2]) || (path+argv[2])==(path+"/.imperiumignore"))
+                    {
+                        addFile << path+argv[2] << "-f\n";
+                        std::cout << "added file: "<< path+argv[2]<< "\n";
+                        addFile.close();
+                    }
+                }
+                else
+                {
+                    std::cout << "path is not a file.\n";
+                }
+                
             }
             else
             {
-                std::cout << "path is not a file.\n";
+                    std::cout << "file doesn't exist, kindly check.\n";
+                    addFile.close();
             }
             
         }
-        else
-        {
-                std::cout << "file doesn't exist, kindly check.\n";
-                addFile.close();
-        }
-        
-    }
-    std::cout << "add used\n";
+        std::cout << "add used\n";
     }
 }
 
