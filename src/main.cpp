@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string.h>
+#include <fstream>
 #include <sys/stat.h>
 
 void init(std::string path)
@@ -16,7 +17,10 @@ void init(std::string path)
     {
         int created = mkdir(path.c_str(), 0777);
         if (created == 0)
-        {
+        {   std::string commitLog = path + "/commit.log";
+            std::ofstream commit(commitLog.c_str());
+            std::string addLog = path + "/add.log";
+            std::ofstream add(addLog.c_str());
             std::cout << "Initialised imperium repository"
                       << "\n";
         }
