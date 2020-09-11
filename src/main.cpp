@@ -152,7 +152,7 @@ void add(std::string path, char **argv)
                 {
                     for(auto& p: fs::recursive_directory_iterator(path))
                     {
-                        if (toBeIgnored(path,p.path()) || p.path()==(path+"/.imperiumignore"))
+                        if (toBeIgnored(path,p.path()) || p.path()==(path+"/.imperiumIgnore"))
                         continue;
                         if(stat (p.path().c_str(), &s) == 0)
                         {
@@ -174,7 +174,7 @@ void add(std::string path, char **argv)
                 }
                 else if( s.st_mode & S_IFREG )
                 {
-                    if (toBeIgnored(path,path+argv[2]) || (path+argv[2])==(path+"/.imperiumignore"))
+                    if (toBeIgnored(path,path+argv[2]) || (path+argv[2])==(path+"/.imperiumIgnore"))
                     {
                         addFile << path+argv[2] << "-f\n";
                         std::cout << "added file: "<< path+argv[2]<< "\n";
