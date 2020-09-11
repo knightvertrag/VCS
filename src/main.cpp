@@ -8,14 +8,27 @@
 
 namespace fs = std::filesystem;
 
+ int ignoreFolder(std::string path, std::vector<std::string> folderList){
+     auto i = folderList.begin();
+     while(i!=folderList.end()){
+         std::string folderName =*i++;
+         folderName.pop_back();
+         if(path.find(folderName,0) != std::string::npos)
+            return 1;
+     }
+
+     return 0;
+ }
+
 int toBeIgnored(std::string dir, std::string path)
 {
     std::ifstream readIgnoreFile,readAddLog;
     std::string filename;
     std::vector<std::string> filenames;
     std::vector<std::string> addedFilenames;
+    std::vector<std::string> regexFolder;
 
-    readIgnoreFile.open(dir+"/.imperiumignore");
+    readIgnoreFile.open(dir+"/.imperiumIgnore");
     readAddLog.open(dir+"/.imperium/add.log");
 
     if(readIgnoreFile.is_open())
@@ -23,9 +36,18 @@ int toBeIgnored(std::string dir, std::string path)
         while(!readIgnoreFile.eof())
         {
             std::getline(readIgnoreFile,filename);
-            filenames.push_back(filename);
+            auto i = filename.end();
+            i--;
+            std::cout << *i << "let's see\n";
+            if(*i == '/'){
+                regexFolder.push_back(filename);
+            }
+            else
+            filenames.push_back(dir+filename);
         }
     }
+
+    readIgnoreFile.close();
 
     if(readAddLog.is_open())
     {
@@ -39,8 +61,11 @@ int toBeIgnored(std::string dir, std::string path)
         }
     }
 
+    readAddLog.close();
+
     if(std::find(filenames.begin(),filenames.end(),path)!=filenames.end() 
     || std::find(addedFilenames.begin(),addedFilenames.end(),path)!=addedFilenames.end()
+    || ignoreFolder(path, regexFolder)
     )
     return 1;
     
@@ -50,15 +75,18 @@ int toBeIgnored(std::string dir, std::string path)
 void init(std::string path)
 {
     struct stat buffer;
-
-    path += "/.imperium";
-    if (stat(path.c_str(), &buffer) == 0)
+    
+    if (stat((path+"/.imperium").c_str(), &buffer) == 0)
     {
         std::cout << "Already initialized as imperium repository"
                   << "\n";
     }
     else
-    {
+    {   
+        std::string imperiumIgnore = path + "/.imperiumIgnore";
+        std::ofstream ignore(imperiumIgnore.c_str());
+        path += "/.imperium";
+        ignore << ".imperium/\n"<<".git/\n" << ".node_modules/\n" << ".env\n";
         int created = mkdir(path.c_str(), 0777);
         if (created == 0)
         {   std::string commitLog = path + "/commit.log";

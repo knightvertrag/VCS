@@ -6,7 +6,8 @@ make
 cd ~/imperium/bin || echo "error"
 chmod +x main
 cd ..
-echo "source $PWD/imperium.sh" >> ~/.bashrc
-
-
-
+if grep -q "source $PWD/imperium.sh" "$PWD/../.bashrc" ; then
+    echo 'already installed bash source';
+else
+    echo "source $PWD/imperium.sh" >> ~/.bashrc;
+fi
