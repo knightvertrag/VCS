@@ -3,6 +3,6 @@ function imperium(){
     DIR=$PWD
     export dir=$DIR
     cd ~/imperium/bin || echo "Error"
-    ./main "$1"
+    ./main "$@"
     cd "$DIR" || echo "Error"
 }
