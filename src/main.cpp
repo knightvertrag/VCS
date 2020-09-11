@@ -8,6 +8,8 @@
 
 namespace fs = std::filesystem;
 
+std::string root ="";
+
  int ignoreFolder(std::string path, std::vector<std::string> folderList){
      auto i = folderList.begin();
      while(i!=folderList.end()){
@@ -21,15 +23,15 @@ namespace fs = std::filesystem;
  }
 
 int toBeIgnored(std::string dir, std::string path)
-{
+{   
     std::ifstream readIgnoreFile,readAddLog;
     std::string filename;
     std::vector<std::string> filenames;
     std::vector<std::string> addedFilenames;
     std::vector<std::string> regexFolder;
 
-    readIgnoreFile.open(dir+"/.imperiumIgnore");
-    readAddLog.open(dir+"/.imperium/add.log");
+    readIgnoreFile.open(root+"/.imperiumIgnore");
+    readAddLog.open(root+"/.imperium/add.log");
 
     if(readIgnoreFile.is_open())
     {
@@ -38,12 +40,11 @@ int toBeIgnored(std::string dir, std::string path)
             std::getline(readIgnoreFile,filename);
             auto i = filename.end();
             i--;
-            std::cout << *i << "let's see\n";
             if(*i == '/'){
                 regexFolder.push_back(filename);
             }
             else
-            filenames.push_back(dir+filename);
+            filenames.push_back(root+filename);
         }
     }
 
@@ -86,7 +87,7 @@ void init(std::string path)
         std::string imperiumIgnore = path + "/.imperiumIgnore";
         std::ofstream ignore(imperiumIgnore.c_str());
         path += "/.imperium";
-        ignore << ".imperium/\n"<<".git/\n" << ".node_modules/\n" << ".env\n";
+        ignore << ".imperium/\n"<<".git/\n" << ".node_modules/\n" << "/.env\n";
         int created = mkdir(path.c_str(), 0777);
         if (created == 0)
         {   std::string commitLog = path + "/commit.log";
@@ -120,7 +121,7 @@ void add(std::string path, char **argv)
             struct stat s;
             for(auto& p: fs::recursive_directory_iterator(path))
             {
-                if (toBeIgnored(path,p.path()) || p.path()==(path+"/.imperiumignore"))
+                if (toBeIgnored(path,p.path()) || p.path()==(path+"/.imperiumIgnore"))
                 continue;
                 if(stat (p.path().c_str(), &s) == 0)
                 {
@@ -144,7 +145,8 @@ void add(std::string path, char **argv)
         }
         else
         {   struct stat s;
-            if(stat ((path+argv[2]).c_str(), &s) == 0){
+            if(stat ((path+"/"+argv[2]).c_str(), &s) == 0){
+                path += "/";
                 path += argv[2];
                 if( s.st_mode & S_IFDIR )
                 {
@@ -204,6 +206,7 @@ void commit()
 int main(int argc, char **argv)
 {
     const char *dir = getenv("dir");
+    root = dir;
     if (strcmp(argv[1], "init") == 0)
     {   
         init(dir);
