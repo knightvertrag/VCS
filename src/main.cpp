@@ -85,6 +85,7 @@ int toBeIgnored(std::string path)
 
     readIgnoreFile.close();
 
+    //Read the add log and put them as a path-type pair in addedFilenames
     if (readAddLog.is_open())
     {
         while (!readAddLog.eof())
@@ -98,7 +99,8 @@ int toBeIgnored(std::string path)
     }
 
     readAddLog.close();
-
+    //Loop through the addedFilenames(add log) and check if file to be added already exists
+    //if yes, then put it into cache overwriting the previous file
     for (auto i = addedFilenames.begin(); i != addedFilenames.end(); i++)
     {
         std::pair<std::string, char> fileEntry = *i;
@@ -170,6 +172,9 @@ void add(char **argv)
             struct stat s;
             for (auto &p : fs::recursive_directory_iterator(root))
             {
+                //Check if directories are to be ignored or updated
+                //if true then implies files/directories exist so overwwrite and return 1 and continue the loop
+                //if false then implies new untracked file is being added so move on to file creation in cache
                 if (toBeIgnored(p.path()))
                     continue;
                 if (stat(p.path().c_str(), &s) == 0)
@@ -204,6 +209,9 @@ void add(char **argv)
                 path += argv[2];
                 if (s.st_mode & S_IFDIR)
                 {
+                    //Check if file is to be ignored or updated
+                    //if false then toBeIgnored updated cached directory/file and returned 1 so skip adding to cache here
+                    //if true then implies new untracked file is being added so move on to file creation in cache
                     if (!toBeIgnored(path))
                     {
                         addFile << "\"" << path << "\""
@@ -215,6 +223,7 @@ void add(char **argv)
                     }
                     for (auto &p : fs::recursive_directory_iterator(path))
                     {
+                        //same as imperium add .
                         if (toBeIgnored(p.path()))
                             continue;
                         if (stat(p.path().c_str(), &s) == 0)
