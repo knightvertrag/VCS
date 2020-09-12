@@ -26,34 +26,34 @@ int ignoreFolder(std::string path, std::vector<std::string> folderList)
     return 0;
 }
 
-void addToCache(std::string file_path, char type){
+void addToCache(std::string file_path, char type)
+{
     struct stat l;
-         if (stat((root + "/.imperium/.add").c_str(), &l) != 0)
-             mkdir((root + "/.imperium/.add").c_str(), 0777);
+    if (stat((root + "/.imperium/.add").c_str(), &l) != 0)
+        mkdir((root + "/.imperium/.add").c_str(), 0777);
 
-        if(type == 'f'){
-            struct stat k;
-                 std::string filename = file_path.substr(root.length());
-                 std::string filerel = root + "/.imperium/.add" + filename.substr(0, filename.find_last_of('/'));
-                 if (stat(filerel.c_str(), &k) != 0)
-                 {
-                     fs::create_directories(filerel);
-                 }
-
-                 fs::copy_file(file_path, root + "/.imperium/.add" + filename, fs::copy_options::overwrite_existing);
-
-        }
-        else if(type == 'd'){
-                   struct stat k;
-                   std::string filename = file_path.substr(root.length());
-                   std::string filerel = root + "/.imperium/.add" + filename;
-                   std::cout << filerel << "\n";
-                    if (stat(filerel.c_str(), &k) != 0)
-                        {
-                            fs::create_directories(filerel);
-                        }
+    if (type == 'f')
+    {
+        struct stat k;
+        std::string filename = file_path.substr(root.length());
+        std::string filerel = root + "/.imperium/.add" + filename.substr(0, filename.find_last_of('/'));
+        if (stat(filerel.c_str(), &k) != 0)
+        {
+            fs::create_directories(filerel);
         }
 
+        fs::copy_file(file_path, root + "/.imperium/.add" + filename, fs::copy_options::overwrite_existing);
+    }
+    else if (type == 'd')
+    {
+        struct stat k;
+        std::string filename = file_path.substr(root.length());
+        std::string filerel = root + "/.imperium/.add" + filename;
+        if (stat(filerel.c_str(), &k) != 0)
+        {
+            fs::create_directories(filerel);
+        }
+    }
 }
 
 int toBeIgnored(std::string path)
@@ -61,7 +61,7 @@ int toBeIgnored(std::string path)
     std::ifstream readIgnoreFile, readAddLog;
     std::string filename;
     std::vector<std::string> filenames;
-    std::vector<std::pair <std::string, char> > addedFilenames;
+    std::vector<std::pair<std::string, char>> addedFilenames;
     std::vector<std::string> ignoreDir;
 
     readIgnoreFile.open(root + "/.imperiumIgnore");
@@ -92,24 +92,26 @@ int toBeIgnored(std::string path)
             std::getline(readAddLog, filename);
             if (filename.length() > 4)
             {
-                addedFilenames.push_back(make_pair(filename.substr(1, filename.length() - 4), filename.at(filename.length()-1)));
+                addedFilenames.push_back(make_pair(filename.substr(1, filename.length() - 4), filename.at(filename.length() - 1)));
             }
         }
     }
 
     readAddLog.close();
 
-    for(auto i= addedFilenames.begin(); i!= addedFilenames.end(); i++){
-        std::pair< std::string, char> fileEntry =*i;
-        if (path.compare(fileEntry.first)==0)
+    for (auto i = addedFilenames.begin(); i != addedFilenames.end(); i++)
+    {
+        std::pair<std::string, char> fileEntry = *i;
+        if (path.compare(fileEntry.first) == 0)
         {
             addToCache(path, fileEntry.second);
+            std::cout << "Updated :"
+                      << "\"" << path << "\"\n";
             return 1;
         }
     }
 
-    if (std::find(filenames.begin(), filenames.end(), path) != filenames.end() 
-        || ignoreFolder(path, ignoreDir))
+    if (std::find(filenames.begin(), filenames.end(), path) != filenames.end() || ignoreFolder(path, ignoreDir))
         return 1;
 
     return 0;
@@ -154,7 +156,6 @@ void init(std::string path)
     }
 }
 
-
 void add(char **argv)
 {
     struct stat buffer;
@@ -192,7 +193,6 @@ void add(char **argv)
                 }
             }
             addFile.close();
-
         }
         else
         {
@@ -203,14 +203,19 @@ void add(char **argv)
                 path += "/";
                 path += argv[2];
                 if (s.st_mode & S_IFDIR)
-                {   
-                    if(!toBeIgnored(path)){
-                        addFile << "\""<< path <<"\""<<"-d\n";
+                {
+                    if (!toBeIgnored(path))
+                    {
+                        addFile << "\"" << path << "\""
+                                << "-d\n";
                         addToCache(path, 'd');
-                        std::cout << "added directory: " << "\"" << path << "\"" << "\n";
+                        std::cout << "added directory: "
+                                  << "\"" << path << "\""
+                                  << "\n";
                     }
                     for (auto &p : fs::recursive_directory_iterator(path))
-                    {    if (toBeIgnored(p.path()))
+                    {
+                        if (toBeIgnored(p.path()))
                             continue;
                         if (stat(p.path().c_str(), &s) == 0)
                         {
@@ -237,9 +242,12 @@ void add(char **argv)
                 {
                     if (!toBeIgnored(path))
                     {
-                        addFile << "\""<<path<<"\""<< "-f\n";
+                        addFile << "\"" << path << "\""
+                                << "-f\n";
                         addToCache(path, 'f');
-                        std::cout << "added file: " << "\""<<path<<"\""<< "\n";
+                        std::cout << "added file: "
+                                  << "\"" << path << "\""
+                                  << "\n";
                         addFile.close();
                     }
                 }
