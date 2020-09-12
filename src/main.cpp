@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <utility>
 #include <string>
+#include <openssl/sha.h>
+#include <chrono>
+#include <ctime>
 
 namespace fs = std::filesystem;
 
@@ -105,8 +108,6 @@ int toBeIgnored(std::string path)
         if (path.compare(fileEntry.first) == 0)
         {
             addToCache(path, fileEntry.second);
-            std::cout << "Updated :"
-                      << "\"" << path << "\"\n";
             return 1;
         }
     }
@@ -267,9 +268,244 @@ void add(char **argv)
     }
 }
 
-void commit()
+static const int K_READ_BUF_SIZE = {1024 * 16};
+int calculateSHA1(std::string fileToRead, std::string fileToWrite)
 {
-    std::cout << "commit used\n";
+    std::ifstream readFile;
+    std::ofstream writeFile;
+
+    readFile.open(fileToRead);
+    writeFile.open(fileToWrite, std::ios_base::app);
+
+    while (!readFile.eof())
+    {
+        std::string line;
+        std::getline(readFile, line);
+        unsigned char hash[20];
+        int length = line.length();
+        unsigned char *val = new unsigned char[line.length() + 1];
+        strcpy((char *)val, line.c_str());
+
+        SHA1(val, length, hash);
+
+        int i;
+        for (i = 0; i < 20; i++)
+        {
+            writeFile << hash[i];
+        }
+    }
+    writeFile.close();
+    readFile.close();
+    return 0;
+}
+
+std::string getTime()
+{
+    auto end = std::chrono::system_clock::now();
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+    std::string time = std::ctime(&end_time);
+
+    return time;
+}
+
+std::string getCommitHash()
+{
+    std::string time = getTime();
+    std::string commitFilename = time;
+    char buf[3];
+    std::string commitHash = "";
+
+    int length = commitFilename.length();
+    unsigned char hash[20];
+    unsigned char *val = new unsigned char[length + 1];
+    strcpy((char *)val, commitFilename.c_str());
+
+    SHA1(val, length, hash);
+    int i;
+    for (i = 0; i < 20; i++)
+    {
+        sprintf(buf, "%02x", hash[i]);
+        commitHash += buf;
+    }
+    return commitHash;
+}
+
+void repeatCommit(std::string absPath, char type, std::string commitHash, int len)
+{
+    mkdir((root + "/.imperium/.commit/" + commitHash).c_str(), 0777);
+    struct stat n;
+
+    if (type == 'f')
+    {
+        struct stat h;
+        std::string filename = absPath.substr(root.length() + 19 + len);
+        std::string filerel = root + "/.imperium/.commit/" + commitHash + filename.substr(0, filename.find_last_of('/'));
+
+        if (stat(filerel.c_str(), &h) != 0)
+        {
+            fs::create_directories(filerel);
+        }
+
+        // std::string commitFile=root+"/.imperium/.commit/"+commitHash+filename;
+        // calculateSHA1(absPath,commitFile);
+
+        fs::copy_file(absPath, root + "/.imperium/.commit/" + commitHash + filename, fs::copy_options::overwrite_existing);
+    }
+    else if (type == 'd')
+    {
+        struct stat k;
+        std::string filename = absPath.substr(root.length() + 19 + len);
+        std::string filerel = root + "/.imperium/.commit/" + commitHash + filename;
+        if (stat(filerel.c_str(), &k) != 0)
+        {
+            fs::create_directories(filerel);
+        }
+    }
+}
+
+void addCommit(std::string absPath, char type, std::string commitHash)
+{
+    struct stat n;
+    if (stat((root + "/.imperium/.commit").c_str(), &n) != 0)
+        mkdir((root + "/.imperium/.commit").c_str(), 0777);
+
+    if (stat((root + "/.imperium/.commit/" + commitHash).c_str(), &n) != 0)
+        mkdir((root + "/.imperium/.commit/" + commitHash).c_str(), 0777);
+
+    if (type == 'f')
+    {
+        struct stat h;
+        std::string filename = absPath.substr(root.length() + 15);
+        std::string filerel = root + "/.imperium/.commit/" + commitHash + filename.substr(0, filename.find_last_of('/'));
+
+        if (stat(filerel.c_str(), &h) != 0)
+        {
+            fs::create_directories(filerel);
+        }
+
+        // uncomment when you want to hash the commit files
+        // std::string commitFile=root+"/.imperium/.commit/"+commitHash+filename;
+        // calculateSHA1(absPath,commitFile);
+
+        // comment when you want the hashed files
+        fs::copy_file(absPath, root + "/.imperium/.commit/" + commitHash + filename, fs::copy_options::overwrite_existing);
+    }
+    else if (type == 'd')
+    {
+        struct stat k;
+        std::string filename = absPath.substr(root.length() + 15);
+        std::string filerel = root + "/.imperium/.commit/" + commitHash + filename;
+        if (stat(filerel.c_str(), &k) != 0)
+        {
+            fs::create_directories(filerel);
+        }
+    }
+}
+
+void updateCommitLog(std::string commitHash, std::string message)
+{
+    std::ofstream writeCommitLog;
+    std::ofstream writeHeadLog;
+    std::ifstream readCommitLog;
+
+    std::string line;
+
+    readCommitLog.open(root + "/.imperium/commit.log");
+    writeCommitLog.open(root + "/.imperium/commitNew.log", std::ios::app);
+    writeHeadLog.open(root + "/.imperium/head.log");
+
+    writeCommitLog << commitHash << " -- " << message << " -->HEAD\n";
+    writeHeadLog << commitHash << " -- " << message << " -->HEAD\n";
+
+    while (std::getline(readCommitLog, line))
+    {
+        if (line.find(" -->HEAD") != std::string::npos)
+        {
+            writeCommitLog << line.substr(0, line.length() - 8) << "\n";
+        }
+        else
+        {
+            writeCommitLog << line << "\n";
+        }
+    }
+    remove((root + "/.imperium/commit.log").c_str());
+    rename((root + "/.imperium/commitNew.log").c_str(), (root + "/.imperium/commit.log").c_str());
+    readCommitLog.close();
+    writeCommitLog.close();
+}
+
+void commit(char **argv)
+{
+    struct stat buf;
+    if (stat((root + "/.imperium").c_str(), &buf) != 0)
+    {
+        std::cout << "Not an imperium repo\n";
+    }
+    else
+    {
+        std::cout << "commit used\n";
+        std::string message = argv[2];
+
+        if (strcmp(argv[2], "") != 0)
+        {
+            std::string commitHash = getCommitHash();
+            struct stat s;
+            if (stat((root + "/.imperium/head.log").c_str(), &buf) == 0)
+            {
+                std::string headHash;
+                std::ifstream readCommitLog;
+
+                readCommitLog.open(root + "/.imperium/head.log");
+
+                std::getline(readCommitLog, headHash);
+                headHash = headHash.substr(0, headHash.find(" -- "));
+
+                for (auto &p : fs::recursive_directory_iterator(root + "/.imperium/.commit/" + headHash))
+                {
+                    if (stat(p.path().c_str(), &s) == 0)
+                    {
+                        if (s.st_mode & S_IFREG)
+                        {
+                            repeatCommit(p.path(), 'f', commitHash, headHash.length());
+                            // std::cout << "committed file: " << p.path() << "\n";
+                        }
+                        else if (s.st_mode & S_IFDIR)
+                        {
+                            repeatCommit(p.path(), 'd', commitHash, headHash.length());
+                            // std::cout << "committed directory: " << p.path() << "\n";
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+            for (auto &p : fs::recursive_directory_iterator(root + "/.imperium/.add"))
+            {
+                if (stat(p.path().c_str(), &s) == 0)
+                {
+                    if (s.st_mode & S_IFREG)
+                    {
+                        addCommit(p.path(), 'f', commitHash);
+                        // std::cout << "committed file: " << p.path() << "\n";
+                    }
+                    else if (s.st_mode & S_IFDIR)
+                    {
+                        addCommit(p.path(), 'd', commitHash);
+                        // std::cout << "committed directory: " << p.path() << "\n";
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+            }
+            fs::remove_all((root + "/.imperium/.add").c_str());
+            remove((root + "/.imperium/add.log").c_str());
+            updateCommitLog(commitHash, message);
+        }
+    }
 }
 
 int main(int argc, char **argv)
@@ -286,6 +522,6 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[1], "commit") == 0)
     {
-        commit();
+        commit(argv);
     }
 }
