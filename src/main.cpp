@@ -110,6 +110,7 @@ int toBeIgnored(std::string path)
         if (path.compare(fileEntry.first) == 0)
         {
             addToCache(path, fileEntry.second);
+            std::cout<<"Updated : "<<path<<"\n";
             return 1;
         }
     }
@@ -136,7 +137,7 @@ void init(std::string path)
         path += "/.imperium";
         ignore << ".imperium/\n"
                << ".git/\n"
-               << "/.imperiumIgnore"
+               << "/.imperiumIgnore\n"
                << ".node_modules/\n"
                << "/.env\n";
         int created = mkdir(path.c_str(), 0777);
@@ -167,47 +168,14 @@ void add(char **argv)
         std::ofstream addFile;
 
         addFile.open(root + "/.imperium/add.log", std::ios_base::app);
-
-        if (strcmp(argv[2], ".") == 0)
-        {
-            struct stat s;
-            for (auto &p : fs::recursive_directory_iterator(root))
-            {
-                //Check if directories are to be ignored or updated
-                //if true then implies files/directories exist so overwwrite and return 1 and continue the loop
-                //if false then implies new untracked file is being added so move on to file creation in cache
-                if (toBeIgnored(p.path()))
-                    continue;
-                if (stat(p.path().c_str(), &s) == 0)
-                {
-                    if (s.st_mode & S_IFREG)
-                    {
-                        addFile << p.path() << "-f\n";
-                        addToCache(p.path(), 'f');
-                        std::cout << "added file: " << p.path() << "\n";
-                    }
-                    else if (s.st_mode & S_IFDIR)
-                    {
-                        addFile << p.path() << "-d\n";
-                        addToCache(p.path(), 'd');
-                        std::cout << "added directory: " << p.path() << "\n";
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-            }
-            addFile.close();
+        std::string path = root;
+        if (strcmp(argv[2], ".") != 0)
+        {   path += "/";
+            path += argv[2];
         }
-        else
-        {
             struct stat s;
-            std::string path = root;
-            if (stat((path + "/" + argv[2]).c_str(), &s) == 0)
+            if (stat(path.c_str(), &s) == 0)
             {
-                path += "/";
-                path += argv[2];
                 if (s.st_mode & S_IFDIR)
                 {
                     //Check if file is to be ignored or updated
@@ -271,9 +239,12 @@ void add(char **argv)
                 std::cout << "file doesn't exist, kindly check.\n";
                 addFile.close();
             }
-        }
+        
 
         std::cout << "add used\n";
+    }
+    else{
+        std::cout << "Not an imperium repository. Type imperium -h for help\n";
     }
 }
 
