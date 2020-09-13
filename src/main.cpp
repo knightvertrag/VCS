@@ -519,17 +519,23 @@ void revert(char **argv)
     std::string revertCommitHash = argv[2];
     std::string commitFolderName = revertCommitHash.substr(0, 40);
     bool directoryExists = false;
-    for (auto &i : fs::directory_iterator(root + "/.imperium/.commit"))
+    std::ifstream commitLog;
+    std::string commitLine;
+    commitLog.open(root + "/.imperium/commit.log");
+    while (std::getline(commitLog, commitLine))
     {
-        if (commitFolderName == i.path())
+        //std::cout << commitLine.substr(0, 40) << "\n";
+        if (commitFolderName == commitLine.substr(0, 40))
+        {
             directoryExists = true;
+        }
     }
-    // if (!directoryExists)
-    // {
-    //     std::cout << "incorrect Hash provided"
-    //               << "\n";
-    //     return;
-    // }
+    if (!directoryExists)
+    {
+        std::cout << "incorrect Hash provided"
+                  << "\n";
+        return;
+    }
     std::string commitFolderPath = root + "/.imperium/.commit/" + commitFolderName;
     for (auto &i : fs::directory_iterator(root))
     {
