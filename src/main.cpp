@@ -350,24 +350,31 @@ void repeatCommit(std::string absPath, char type, std::string commitHash, int le
         std::string filename = absPath.substr(root.length() + 19 + len);
         std::string filerel = root + "/.imperium/.commit/" + commitHash + filename.substr(0, filename.find_last_of('/'));
 
-        if (stat(filerel.c_str(), &h) != 0)
+        if(stat((root+filename).c_str(),&h)==0)
         {
-            fs::create_directories(filerel);
+             if (stat(filerel.c_str(), &h) != 0)
+            {
+                fs::create_directories(filerel);
+            }
+
+            // std::string commitFile=root+"/.imperium/.commit/"+commitHash+filename;
+            // calculateSHA1(absPath,commitFile);
+
+            fs::copy_file(absPath, root + "/.imperium/.commit/" + commitHash + filename, fs::copy_options::overwrite_existing);
         }
-
-        // std::string commitFile=root+"/.imperium/.commit/"+commitHash+filename;
-        // calculateSHA1(absPath,commitFile);
-
-        fs::copy_file(absPath, root + "/.imperium/.commit/" + commitHash + filename, fs::copy_options::overwrite_existing);
     }
     else if (type == 'd')
     {
         struct stat k;
         std::string filename = absPath.substr(root.length() + 19 + len);
         std::string filerel = root + "/.imperium/.commit/" + commitHash + filename;
-        if (stat(filerel.c_str(), &k) != 0)
+
+        if(stat((root+filename).c_str(),&k)==0)
         {
-            fs::create_directories(filerel);
+            if (stat(filerel.c_str(), &k) != 0)
+            {
+                fs::create_directories(filerel);
+            }
         }
     }
 }
