@@ -524,12 +524,12 @@ void revert(char **argv)
         if (commitFolderName == i.path())
             directoryExists = true;
     }
-    if (!directoryExists)
-    {
-        std::cout << "incorrect Hash provided"
-                  << "\n";
-        return;
-    }
+    // if (!directoryExists)
+    // {
+    //     std::cout << "incorrect Hash provided"
+    //               << "\n";
+    //     return;
+    // }
     std::string commitFolderPath = root + "/.imperium/.commit/" + commitFolderName;
     for (auto &i : fs::directory_iterator(root))
     {
