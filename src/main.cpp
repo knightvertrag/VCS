@@ -110,7 +110,7 @@ int toBeIgnored(std::string path)
         if (path.compare(fileEntry.first) == 0)
         {
             addToCache(path, fileEntry.second);
-            std::cout<<"Updated : "<<path<<"\n";
+            std::cout << "Updated : " << path << "\n";
             return 1;
         }
     }
@@ -170,80 +170,81 @@ void add(char **argv)
         addFile.open(root + "/.imperium/add.log", std::ios_base::app);
         std::string path = root;
         if (strcmp(argv[2], ".") != 0)
-        {   path += "/";
+        {
+            path += "/";
             path += argv[2];
         }
-            struct stat s;
-            if (stat(path.c_str(), &s) == 0)
+        struct stat s;
+        if (stat(path.c_str(), &s) == 0)
+        {
+            if (s.st_mode & S_IFDIR)
             {
-                if (s.st_mode & S_IFDIR)
+                //Check if file is to be ignored or updated
+                //if false then toBeIgnored updated cached directory/file and returned 1 so skip adding to cache here
+                //if true then implies new untracked file is being added so move on to file creation in cache
+                if (!toBeIgnored(path))
                 {
-                    //Check if file is to be ignored or updated
-                    //if false then toBeIgnored updated cached directory/file and returned 1 so skip adding to cache here
-                    //if true then implies new untracked file is being added so move on to file creation in cache
-                    if (!toBeIgnored(path))
+                    addFile << "\"" << path << "\""
+                            << "-d\n";
+                    addToCache(path, 'd');
+                    std::cout << "added directory: "
+                              << "\"" << path << "\""
+                              << "\n";
+                }
+                for (auto &p : fs::recursive_directory_iterator(path))
+                {
+                    //same as imperium add .
+                    if (toBeIgnored(p.path()))
+                        continue;
+                    if (stat(p.path().c_str(), &s) == 0)
                     {
-                        addFile << "\"" << path << "\""
-                                << "-d\n";
-                        addToCache(path, 'd');
-                        std::cout << "added directory: "
-                                  << "\"" << path << "\""
-                                  << "\n";
-                    }
-                    for (auto &p : fs::recursive_directory_iterator(path))
-                    {
-                        //same as imperium add .
-                        if (toBeIgnored(p.path()))
-                            continue;
-                        if (stat(p.path().c_str(), &s) == 0)
+                        if (s.st_mode & S_IFREG)
                         {
-                            if (s.st_mode & S_IFREG)
-                            {
-                                addFile << p.path() << "-f\n";
-                                addToCache(p.path(), 'f');
-                                std::cout << "added file: " << p.path() << "\n";
-                            }
-                            else if (s.st_mode & S_IFDIR)
-                            {
-                                addFile << p.path() << "-d\n";
-                                addToCache(p.path(), 'd');
-                                std::cout << "added directory: " << p.path() << "\n";
-                            }
-                            else
-                            {
-                                continue;
-                            }
+                            addFile << p.path() << "-f\n";
+                            addToCache(p.path(), 'f');
+                            std::cout << "added file: " << p.path() << "\n";
+                        }
+                        else if (s.st_mode & S_IFDIR)
+                        {
+                            addFile << p.path() << "-d\n";
+                            addToCache(p.path(), 'd');
+                            std::cout << "added directory: " << p.path() << "\n";
+                        }
+                        else
+                        {
+                            continue;
                         }
                     }
                 }
-                else if (s.st_mode & S_IFREG)
+            }
+            else if (s.st_mode & S_IFREG)
+            {
+                if (!toBeIgnored(path))
                 {
-                    if (!toBeIgnored(path))
-                    {
-                        addFile << "\"" << path << "\""
-                                << "-f\n";
-                        addToCache(path, 'f');
-                        std::cout << "added file: "
-                                  << "\"" << path << "\""
-                                  << "\n";
-                        addFile.close();
-                    }
-                }
-                else
-                {
-                    std::cout << "path is not a file.\n";
+                    addFile << "\"" << path << "\""
+                            << "-f\n";
+                    addToCache(path, 'f');
+                    std::cout << "added file: "
+                              << "\"" << path << "\""
+                              << "\n";
+                    addFile.close();
                 }
             }
             else
             {
-                std::cout << "file doesn't exist, kindly check.\n";
-                addFile.close();
+                std::cout << "path is not a file.\n";
             }
-        
+        }
+        else
+        {
+            std::cout << "file doesn't exist, kindly check.\n";
+            addFile.close();
+        }
 
         std::cout << "add used\n";
     }
-    else{
+    else
+    {
         std::cout << "Not an imperium repository. Type imperium -h for help\n";
     }
 }
@@ -288,6 +289,18 @@ std::string getTime()
     return time;
 }
 
+void getCommitLog()
+{
+    std::string commitLogPath = root + "/.imperium/commit.log";
+    std::string commitLine;
+    std::ifstream commitLog;
+    commitLog.open(commitLogPath);
+    while (getline(commitLog, commitLine))
+    {
+        std::cout << commitLine << "\n";
+    }
+}
+
 std::string getCommitHash()
 {
     std::string time = getTime();
@@ -321,9 +334,9 @@ void repeatCommit(std::string absPath, char type, std::string commitHash, int le
         std::string filename = absPath.substr(root.length() + 19 + len);
         std::string filerel = root + "/.imperium/.commit/" + commitHash + filename.substr(0, filename.find_last_of('/'));
 
-        if(stat((root+filename).c_str(),&h)==0)
+        if (stat((root + filename).c_str(), &h) == 0)
         {
-             if (stat(filerel.c_str(), &h) != 0)
+            if (stat(filerel.c_str(), &h) != 0)
             {
                 fs::create_directories(filerel);
             }
@@ -340,7 +353,7 @@ void repeatCommit(std::string absPath, char type, std::string commitHash, int le
         std::string filename = absPath.substr(root.length() + 19 + len);
         std::string filerel = root + "/.imperium/.commit/" + commitHash + filename;
 
-        if(stat((root+filename).c_str(),&k)==0)
+        if (stat((root + filename).c_str(), &k) == 0)
         {
             if (stat(filerel.c_str(), &k) != 0)
             {
@@ -495,6 +508,39 @@ void commit(char **argv)
     }
 }
 
+void revert(char **argv)
+{
+    if (argv[2] == "")
+    {
+        std::cout << "Please provide a Hash"
+                  << "\n";
+        return;
+    }
+    std::string revertCommitHash = argv[2];
+    std::string commitFolderName = revertCommitHash.substr(0, 40);
+    bool directoryExists = false;
+    for (auto &i : fs::directory_iterator(root + "/.imperium/.commit"))
+    {
+        if (commitFolderName == i.path())
+            directoryExists = true;
+    }
+    // if (!directoryExists)
+    // {
+    //     std::cout << "incorrect Hash provided"
+    //               << "\n";
+    //     return;
+    // }
+    std::string commitFolderPath = root + "/.imperium/.commit/" + commitFolderName;
+    for (auto &i : fs::directory_iterator(root))
+    {
+        if (toBeIgnored(i.path().c_str()))
+            continue;
+        fs::remove_all(i.path());
+    }
+
+    fs::copy(commitFolderPath, root + "/", fs::copy_options::recursive);
+}
+
 int main(int argc, char **argv)
 {
     const char *dir = getenv("dir");
@@ -507,8 +553,17 @@ int main(int argc, char **argv)
     {
         add(argv);
     }
+    else if (strcmp(argv[1], "commit-log") == 0)
+    {
+        getCommitLog();
+    }
+
     else if (strcmp(argv[1], "commit") == 0)
     {
         commit(argv);
+    }
+    else if (strcmp(argv[1], "revert") == 0)
+    {
+        revert(argv);
     }
 }
