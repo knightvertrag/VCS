@@ -508,7 +508,7 @@ void commit(char **argv)
     }
 }
 
-void revert(char **argv)
+void checkout(char **argv)
 {
     if (argv[2] == "")
     {
@@ -537,14 +537,14 @@ void revert(char **argv)
         return;
     }
     std::string commitFolderPath = root + "/.imperium/.commit/" + commitFolderName;
-    for (auto &i : fs::directory_iterator(root))
-    {
-        if (toBeIgnored(i.path().c_str()))
-            continue;
-        fs::remove_all(i.path());
-    }
+    // for (auto &i : fs::directory_iterator(root))
+    // {
+    //     if (toBeIgnored(i.path().c_str()))
+    //         continue;
+    //     fs::remove_all(i.path());
+    // }
 
-    fs::copy(commitFolderPath, root + "/", fs::copy_options::recursive);
+    fs::copy(commitFolderPath, root + "/", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
 }
 
 int main(int argc, char **argv)
@@ -568,8 +568,8 @@ int main(int argc, char **argv)
     {
         commit(argv);
     }
-    else if (strcmp(argv[1], "revert") == 0)
+    else if (strcmp(argv[1], "checkout") == 0)
     {
-        revert(argv);
+        checkout(argv);
     }
 }
