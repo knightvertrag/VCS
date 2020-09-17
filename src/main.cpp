@@ -59,7 +59,7 @@ void addToCache(std::string file_path, char type)
     }
 }
 
-int toBeIgnored(std::string path)
+int toBeIgnored(std::string path, int onlyImperiumIgnore=0)
 {
     std::ifstream readIgnoreFile, readAddLog;
     std::string filename;
@@ -88,30 +88,34 @@ int toBeIgnored(std::string path)
 
     readIgnoreFile.close();
 
-    //Read the add log and put them as a path-type pair in addedFilenames
-    if (readAddLog.is_open())
+    if(onlyImperiumIgnore==0)
     {
-        while (!readAddLog.eof())
+
+        //Read the add log and put them as a path-type pair in addedFilenames
+        if (readAddLog.is_open())
         {
-            std::getline(readAddLog, filename);
-            if (filename.length() > 4)
+            while (!readAddLog.eof())
             {
-                addedFilenames.push_back(make_pair(filename.substr(1, filename.length() - 4), filename.at(filename.length() - 1)));
+                std::getline(readAddLog, filename);
+                if (filename.length() > 4)
+                {
+                    addedFilenames.push_back(make_pair(filename.substr(1, filename.length() - 4), filename.at(filename.length() - 1)));
+                }
             }
         }
-    }
 
-    readAddLog.close();
-    //Loop through the addedFilenames(add log) and check if file to be added already exists
-    //if yes, then put it into cache overwriting the previous file
-    for (auto i = addedFilenames.begin(); i != addedFilenames.end(); i++)
-    {
-        std::pair<std::string, char> fileEntry = *i;
-        if (path.compare(fileEntry.first) == 0)
+        readAddLog.close();
+        //Loop through the addedFilenames(add log) and check if file to be added already exists
+        //if yes, then put it into cache overwriting the previous file
+        for (auto i = addedFilenames.begin(); i != addedFilenames.end(); i++)
         {
-            addToCache(path, fileEntry.second);
-            std::cout << "Updated : " << path << "\n";
-            return 1;
+            std::pair<std::string, char> fileEntry = *i;
+            if (path.compare(fileEntry.first) == 0)
+            {
+                addToCache(path, fileEntry.second);
+                std::cout << "Updated : " << path << "\n";
+                return 1;
+            }
         }
     }
 
@@ -250,34 +254,45 @@ void add(char **argv)
 }
 
 static const int K_READ_BUF_SIZE = {1024 * 16};
-int calculateSHA1(std::string fileToRead, std::string fileToWrite)
+int sameSHA1(std::string file1, std::string file2)
 {
-    std::ifstream readFile;
-    std::ofstream writeFile;
+    std::ifstream readFile1;
+    std::ifstream readFile2;
 
-    readFile.open(fileToRead);
-    writeFile.open(fileToWrite, std::ios_base::app);
+    readFile1.open(file1);
+    readFile2.open(file2);
 
-    while (!readFile.eof())
+    std::string line1,line2;
+
+    while (std::getline(readFile1,line1) && std::getline(readFile2,line2))
     {
-        std::string line;
-        std::getline(readFile, line);
-        unsigned char hash[20];
-        int length = line.length();
-        unsigned char *val = new unsigned char[line.length() + 1];
-        strcpy((char *)val, line.c_str());
+        unsigned char hash1[20],hash2[20];
+        int length1 = line1.length();
+        int length2 = line2.length();
 
-        SHA1(val, length, hash);
+        unsigned char *val1 = new unsigned char[line1.length() + 1];
+        unsigned char *val2 = new unsigned char[line2.length() + 1];
+        strcpy((char *)val1, line1.c_str());
+        strcpy((char *)val2, line2.c_str());
 
-        int i;
-        for (i = 0; i < 20; i++)
+        SHA1(val1, length1, hash1);
+        SHA1(val2, length2, hash2);
+
+        for(int i=0;i<20;i++)
         {
-            writeFile << hash[i];
+            if(hash1[i]!=hash2[i])
+            {
+                return 0;
+            }
         }
     }
-    writeFile.close();
-    readFile.close();
-    return 0;
+    if(std::getline(readFile1,line1) || std::getline(readFile2,line2))
+    {
+        return 0;
+    }
+    readFile1.close();
+    readFile2.close();
+    return 1;
 }
 
 std::string getTime()
@@ -547,6 +562,145 @@ void revert(char **argv)
     fs::copy(commitFolderPath, root + "/", fs::copy_options::recursive);
 }
 
+void status()
+{
+    struct stat buf;
+    std::ifstream readAddLog;
+    std::string line,headHash;
+    std::vector<std::string> staged;
+    std::vector<std::string> type;
+    std::vector<std::string> notstaged;
+    std::ifstream readCommitLog;
+    std::string stagedPath;
+
+    readCommitLog.open(root+ "/.imperium/commit.log");
+    std::getline(readCommitLog,headHash);
+    headHash=headHash.substr(0,40);
+    readCommitLog.close();
+
+    if (stat((root + "/.imperium/.add").c_str(), &buf) == 0)
+    {
+        readAddLog.open(root+"/.imperium/add.log");
+
+        while(std::getline(readAddLog,line))
+        {
+            stagedPath=line.substr(root.length()+1,line.length()-root.length()-4);
+            if(stat((root+"/.imperium/.commit/"+headHash+stagedPath).c_str(),&buf)==0)
+            {
+                if(stat((root+"/"+stagedPath).c_str(),&buf)!=0)
+                {
+                    notstaged.push_back("deleted: "+stagedPath);
+                    staged.erase(std::remove(staged.begin(), staged.end(), stagedPath), staged.end());
+                }
+                else
+                {
+                    type.push_back("modified: ");
+                    staged.push_back(stagedPath);
+                }
+            }
+            else
+            {
+                type.push_back("created: ");
+                staged.push_back(stagedPath);
+            }
+        }
+    }
+    readAddLog.close();
+    struct stat s;
+    if (stat((root+ "/.imperium/commit.log").c_str(),&buf)==0)
+    {
+        for (auto &p : fs::recursive_directory_iterator(root))
+        {
+            if (stat(p.path().c_str(), &s) == 0)
+            {
+                if (s.st_mode & S_IFREG)
+                {
+                    std::string rootPath= p.path();
+
+                    if(toBeIgnored(p.path().c_str(),1))
+                    continue;
+
+                    std::string commitPath= root+ "/.imperium/.commit/"+ headHash + rootPath.substr(root.length());
+
+                    if(stat((commitPath).c_str(),&s)!=0 && (std::find(staged.begin(), staged.end(), rootPath.substr(root.length())) == staged.end()))
+                    {
+                        notstaged.push_back("created: " + rootPath.substr(root.length()));
+                        for(int i=0;i<staged.size();i++)
+                        {
+                            std::cout<<staged[i]<<"\n";
+                        }
+                    }
+                    else
+                    {
+                        // std::cout<<rootPath<<" and "<<commitPath<<"\n";
+
+                        if(!sameSHA1(rootPath,commitPath))
+                        {
+                            if(std::find(staged.begin(), staged.end(), rootPath.substr(root.length())) == staged.end())
+                            notstaged.push_back("modified: " + rootPath.substr(root.length()));
+                            else
+                            {
+                                std::string addPath= root+ "/.imperium/.add/" + rootPath.substr(root.length());
+                                // std::cout<<"root "<<rootPath<<" add path "<<addPath<<"\n";
+                                if(!sameSHA1(rootPath,addPath))
+                                {
+                                    staged.erase(std::remove(staged.begin(), staged.end(), rootPath.substr(root.length())), staged.end());
+                                    notstaged.push_back("modified: " + rootPath.substr(root.length()));
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        }
+        for (auto &p : fs::recursive_directory_iterator(root+"/.imperium/.commit/"+headHash))
+        {
+            struct stat s;
+            if (stat(p.path().c_str(), &s) == 0)
+            {
+                if (s.st_mode & S_IFREG)
+                {
+                    std::string commitPath= p.path();
+                    std::string rootPath=root+commitPath.substr(root.length()+59);
+
+                    if(toBeIgnored(rootPath.c_str(),1))
+                    continue;
+
+                    if(stat((rootPath).c_str(),&s)!=0)
+                    {
+                        if(std::find(notstaged.begin(), notstaged.end(), rootPath.substr(root.length())) != notstaged.end())
+                        notstaged.push_back("deleted: "+rootPath.substr(root.length()));
+                    }
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        }
+    }
+    if(notstaged.size())
+    std::cout<<"Changes not staged for commit:\n\n";
+    for(int i=0;i<notstaged.size();i++)
+    {
+        std::cout<<notstaged[i]<<"\n";
+    }
+    if(staged.size())
+    std::cout<<"\nChanges staged for commit:\n\n";
+    for(int i=0;i<staged.size();i++)
+    {
+        std::cout<<type[i]<<staged[i]<<"\n";
+    }
+    if(!notstaged.size() && !staged.size())
+    std::cout<<"Up to date\n";
+    staged.clear();
+    notstaged.clear();
+}
+
 int main(int argc, char **argv)
 {
     const char *dir = getenv("dir");
@@ -571,5 +725,9 @@ int main(int argc, char **argv)
     else if (strcmp(argv[1], "revert") == 0)
     {
         revert(argv);
+    }
+    else if(strcmp(argv[1],"status")==0)
+    {
+        status();
     }
 }
