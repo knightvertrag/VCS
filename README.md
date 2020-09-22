@@ -15,7 +15,7 @@ git clone https://github.com/knightvertrag/VCS
 Run the following command
 
 ```bash
-cd scripts && ./build.sh && ./imperium.sh
+cd scripts && ./build.sh
 
 ```
 
