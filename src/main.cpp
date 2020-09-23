@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <utility>
 #include <string>
-#include "include/openssl/sha.h"
+#include "../include/openssl/sha.h"
 #include <chrono>
 #include <ctime>
 
@@ -43,7 +43,7 @@ void addToCache(std::string file_path, char type)
         std::string filerel = root + "/.imperium/.add" + filename.substr(0, filename.find_last_of('/'));
         if (stat(filerel.c_str(), &k) != 0)
         {
-            fs::create_directories(filerel);
+            fs::create_directory(filerel);
         }
 
         fs::copy_file(file_path, root + "/.imperium/.add" + filename, fs::copy_options::overwrite_existing);
@@ -203,21 +203,21 @@ void add(char **argv)
                 for (auto &p : fs::recursive_directory_iterator(path))
                 {
                     //same as imperium add .
-                    if (toBeIgnored(p.path()))
+                    if (toBeIgnored(p.path().string()))
                         continue;
-                    if (stat(p.path().c_str(), &s) == 0)
+                    if (stat(p.path().string().c_str(), &s) == 0)
                     {
                         if (s.st_mode & S_IFREG)
                         {
-                            addFile << p.path() << "-f\n";
-                            addToCache(p.path(), 'f');
-                            std::cout << "added file: " << p.path() << "\n";
+                            addFile << p.path().string() << "-f\n";
+                            addToCache(p.path().string(), 'f');
+                            std::cout << "added file: " << p.path().string() << "\n";
                         }
                         else if (s.st_mode & S_IFDIR)
                         {
-                            addFile << p.path() << "-d\n";
-                            addToCache(p.path(), 'd');
-                            std::cout << "added directory: " << p.path() << "\n";
+                            addFile << p.path().string() << "-d\n";
+                            addToCache(p.path().string(), 'd');
+                            std::cout << "added directory: " << p.path().string() << "\n";
                         }
                         else
                         {
@@ -482,17 +482,17 @@ void commit(char **argv)
 
                 for (auto &p : fs::recursive_directory_iterator(root + "/.imperium/.commit/" + headHash))
                 {
-                    if (stat(p.path().c_str(), &s) == 0)
+                    if (stat(p.path().string().c_str(), &s) == 0)
                     {
                         if (s.st_mode & S_IFREG)
                         {
-                            repeatCommit(p.path(), 'f', commitHash, headHash.length());
-                            // std::cout << "committed file: " << p.path() << "\n";
+                            repeatCommit(p.path().string(), 'f', commitHash, headHash.length());
+                            // std::cout << "committed file: " << p.path().string() << "\n";
                         }
                         else if (s.st_mode & S_IFDIR)
                         {
-                            repeatCommit(p.path(), 'd', commitHash, headHash.length());
-                            // std::cout << "committed directory: " << p.path() << "\n";
+                            repeatCommit(p.path().string(), 'd', commitHash, headHash.length());
+                            // std::cout << "committed directory: " << p.path().string() << "\n";
                         }
                         else
                         {
@@ -503,17 +503,17 @@ void commit(char **argv)
             }
             for (auto &p : fs::recursive_directory_iterator(root + "/.imperium/.add"))
             {
-                if (stat(p.path().c_str(), &s) == 0)
+                if (stat(p.path().string().c_str(), &s) == 0)
                 {
                     if (s.st_mode & S_IFREG)
                     {
-                        addCommit(p.path(), 'f', commitHash);
-                        // std::cout << "committed file: " << p.path() << "\n";
+                        addCommit(p.path().string(), 'f', commitHash);
+                        // std::cout << "committed file: " << p.path().string() << "\n";
                     }
                     else if (s.st_mode & S_IFDIR)
                     {
-                        addCommit(p.path(), 'd', commitHash);
-                        // std::cout << "committed directory: " << p.path() << "\n";
+                        addCommit(p.path().string(), 'd', commitHash);
+                        // std::cout << "committed directory: " << p.path().string() << "\n";
                     }
                     else
                     {
@@ -571,17 +571,17 @@ int commitCheck(std::string checkPath)
     std::string commitFolderPath = root + "/.imperium/.commit/" + checkPath;
     for (auto &p : fs::recursive_directory_iterator(commitFolderPath))
     {
-        std::string filename = ((std::string)p.path()).substr(root.length() + 19 + checkPath.length());
+        std::string filename = ((std::string)p.path().string()).substr(root.length() + 19 + checkPath.length());
         struct stat s;
         struct stat b;
-        if (stat(p.path().c_str(), &s) == 0 && stat((root + filename).c_str(), &b) == 0)
+        if (stat(p.path().string().c_str(), &s) == 0 && stat((root + filename).c_str(), &b) == 0)
         {
 
             if (s.st_mode & S_IFDIR && b.st_mode & S_IFDIR)
                 continue;
             else if (s.st_mode & S_IFREG && b.st_mode & S_IFREG)
             {
-                if (compareFiles(p.path(), (root + filename)))
+                if (compareFiles(p.path().string(), (root + filename)))
                     return 1;
             }
         }
@@ -662,9 +662,9 @@ void revert(char **argv)
                     {
                         struct stat s;
 
-                        if (stat(p.path().c_str(), &s) == 0)
+                        if (stat(p.path().string().c_str(), &s) == 0)
                         {
-                            std::string relPath = ((std::string)p.path()).substr(root.length());
+                            std::string relPath = ((std::string)p.path().string()).substr(root.length());
                             std::string prevPath = commitFolderPath + relPath;
                             std::string revertPath = root + "/.imperium/.commit/" + passedHash + relPath;
 
@@ -688,22 +688,22 @@ void revert(char **argv)
                     {
                         struct stat s;
 
-                        if (stat(p.path().c_str(), &s) == 0)
+                        if (stat(p.path().string().c_str(), &s) == 0)
                         {
                             if (s.st_mode & S_IFDIR)
                                 continue;
                             else if (s.st_mode & S_IFREG)
                             {
-                                std::string relPath = ((std::string)p.path()).substr(commitFolderPath.length());
+                                std::string relPath = ((std::string)p.path().string()).substr(commitFolderPath.length());
                                 std::string rootPath = root + relPath;
                                 std::string revertPath = root + "/.imperium/.commit/" + passedHash + relPath;
                                 struct stat a;
                                 struct stat b;
                                 if (stat(rootPath.c_str(), &a) == 0)
                                 {
-                                    if (compareFiles(rootPath, p.path()))
+                                    if (compareFiles(rootPath, p.path().string()))
                                     {
-                                        std::ifstream ifile(p.path().c_str(), std::ifstream::in);
+                                        std::ifstream ifile(p.path().string().c_str(), std::ifstream::in);
                                         std::ofstream ofile(rootPath, std::ofstream::out | std::ofstream::app);
                                         ofile << "\n \nYOUR CHANGES________<<<<<<<<<<<<<<<<<<<\n \n_________INCOMING CHANGES>>>>>>>>>>>>>>>>\n \n";
                                         ofile << ifile.rdbuf();
@@ -716,7 +716,7 @@ void revert(char **argv)
                                 }
                                 else
                                 {
-                                    fs::copy_file(p.path(), rootPath, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+                                    fs::copy_file(p.path().string(), rootPath, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
                                 }
                             }
                         }
@@ -724,9 +724,9 @@ void revert(char **argv)
 
                     for (auto &p : fs::recursive_directory_iterator(root + "/.imperium/.commit/" + passedHash))
                     {
-                        std::string relPath = ((std::string)p.path()).substr((root + "/.imperium/.commit/" + passedHash).length());
+                        std::string relPath = ((std::string)p.path().string()).substr((root + "/.imperium/.commit/" + passedHash).length());
                         struct stat s;
-                        if (stat(p.path().c_str(), &s) == 0)
+                        if (stat(p.path().string().c_str(), &s) == 0)
                         {
                             if (s.st_mode & S_IFDIR)
                                 continue;
@@ -738,7 +738,7 @@ void revert(char **argv)
                                 std::string prevPath = commitFolderPath + relPath;
                                 if (stat(rootPath.c_str(), &a) == 0 && stat(prevPath.c_str(), &b) != 0)
                                 {
-                                    if (compareFiles(rootPath, p.path()) == 0)
+                                    if (compareFiles(rootPath, p.path().string()) == 0)
                                         remove(rootPath.c_str());
                                     else
                                     {
@@ -836,13 +836,13 @@ void status()
     {
         for (auto &p : fs::recursive_directory_iterator(root))
         {
-            if (stat(p.path().c_str(), &s) == 0)
+            if (stat(p.path().string().c_str(), &s) == 0)
             {
                 if (s.st_mode & S_IFREG)
                 {
-                    std::string rootPath = p.path();
+                    std::string rootPath = p.path().string();
 
-                    if (toBeIgnored(p.path().c_str(), 1))
+                    if (toBeIgnored(p.path().string().c_str(), 1))
                         continue;
 
                     std::string commitPath = root + "/.imperium/.commit/" + headHash + rootPath.substr(root.length());
@@ -875,11 +875,11 @@ void status()
         for (auto &p : fs::recursive_directory_iterator(root + "/.imperium/.commit/" + headHash))
         {
             struct stat s;
-            if (stat(p.path().c_str(), &s) == 0)
+            if (stat(p.path().string().c_str(), &s) == 0)
             {
                 if (s.st_mode & S_IFREG)
                 {
-                    std::string commitPath = p.path();
+                    std::string commitPath = p.path().string();
                     std::string rootPath = root + commitPath.substr(root.length() + 59);
 
                     if (toBeIgnored(rootPath.c_str(), 1))
@@ -903,11 +903,11 @@ void status()
         for (auto &p : fs::recursive_directory_iterator(root))
         {
             struct stat s;
-            if (stat(p.path().c_str(), &s) == 0)
+            if (stat(p.path().string().c_str(), &s) == 0)
             {
                 if (s.st_mode & S_IFREG)
                 {
-                    std::string rootPath = p.path();
+                    std::string rootPath = p.path().string();
 
                     if (toBeIgnored(rootPath.c_str(), 1))
                         continue;
