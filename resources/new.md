@@ -540,6 +540,143 @@ The idea is simple, we have the project's code and structure that we need to go 
     }
 
    ```
+  
+# <center/>STATUS
+
+While working on an extensive project with multiple commits and multiple adds before a single commit, it becomes difficult for the user to keep a track of what has been already been staged and what remains to be. A fix to this problem is the status command which gives a log of all such information.
+
+For the purpose of this project, we are going to output the staged changes and the unstaged changes in the following way:
+``` bash
+Files staged for commit:
+
+modified: <filename1>
+created: <fielname2>
+
+Files not staged for commit:
+
+modified: <fielname1>
+created: <fielname2>
+deleted: <fielname3>
+```
+Unstaged changes will be tracked by comparing the last commit with the current state and checking if the changed files are present in the .add folder. If one is checking the status before the first commit, then, if .add folder exists, we compare the .add folder with the current state and get the files which have 
+1. not been staged at all
+2. changed after staging
+3. deleted after staging 
+
+If neither .add nor .commit exists we simply consider everything from the root to be unstaged.
+
+For statged changes we simple look up the .add folder.
+
+Lets get started with the code!
+
+In the main function check if the second argument is "status". If yes, call the status function.
+
+## <center/>function status()
+
+>We will be showing status of files only. So ensure that each time you are using the recursive directory iterator, you are only comparing files.
+
+Create two vectors: staged and notStaged. These will conatin filenames of files according to their staging status.
+
+Lets first deal with the situation where both .add and .commit exist, i.e, some files have already been staged and this is not the first commit. Open the commit.log file and retrieve the HEAD hash.
+
+``` cpp
+ifstream readHeadHash
+readHeadHash.open(root+'/.imperium/commit.log')
+getline(readHeadHash,headHash)
+```
+headHash will contain the "HEAD" tag. Remove it using substring. Open the add log if it exists and read the file one line at a time.
+```
+if add.log exists:
+  //open add.log
+  while !add.log.eof():
+    //read from add.log and store
+    ... 
+```
+Inside the while loop after reading each line:
+
+Lets say we read each file name in a variable called line. This line is the filename which has been added for staging. Extract the relative filepath (i.e, part after root) and store it in stagedPath. All these stagedFiles were either created newly or modified since the last commit.
+
+For created:
+
+Check if root+/.imperium/.commit+stagedPath exists. If no, it means that this file was created after the last commit and has been staged. So to the staged vector add the stagedPath with the tag of "created".
+
+```
+if root+/.imperium/.commit+stagedPath does not exist:
+  staged.push("created: "+stagedPath)
+```
+For modified:
+
+  One way to go about this is to write the else part of the above code(ie, if the stagedPath has been commited earlier) - compare the file at stagedPath in .add with that in the last commit. If there is a difference between them, then add to the staged vector with the tag "modified". 
+  
+  But since in this case we are only staging creation and modification, then if the stagedPath is not created, it has to be modified. So a simpler way to go about it will be to just check if the stagedPath has already been added to staged vector as "created". If no, add it as "modfied".
+
+  ```
+  if "created: "+stagedPath does not exist in staged:
+    staged.push("modified: "+stagedPath)
+  ``` 
+
+  We are done with the staged parts. Now moving on to unstaged changes. If a file in the .add file has since been modified, then it should fall under unstaged modified.
+  For this we will need the compareFile function that was discussed in the revert function. We need to compare the files in the add.log file with its current state. So call the compareFiles function, passing the stagedPath from .add and from the current root.
+  If there is a difference then push stagedPath to notStaged vector with tag "modified".
+
+  ```
+  if (compareFiles(root+stagedPath, root+"/.imperium/.add"+stagedPath)):
+    notStaged.push("modified: ",stagedPath)
+  ```
+
+  At this point we have extracted all the information we could from the add.log files.
+  We can come out of the while loop now.
+
+  Outside the while loop:
+
+  Now we need to think about those files which havent been staged at all since the last commit and have been modified since. So we traverse through the current root files and folders and check if they have been modified/created since the last commit but not added.
+
+  If the .commit folder exists, use the recursive directory iterator starting from the root.
+  Check if the current path being iterated(lets call this p.path()) is to be ignored, if yes, skip the rest of the function.
+
+  ```
+  if root+"/.imperium/.commit" exists:
+    recursive directory iterator(root):
+      if toBeIgnored(p.path()== true):
+        continue
+      ...
+  ```    
+  Since we have to compare each of these p.path() with its corresponding committed state(if one exists), we also simultaneously declare a commitPath. If this commitPath does not exist and has not been staged, then it means it has been new created and has to be added to the notStaged vector.
+
+  If the commitPath does exist and it has not been staged, then we compare the current root file with the commitPath. If there are differences then we add this file to the notStaged folder with "modified" tag.
+
+  ```
+    if toBeIgnored(p.path()== true):
+        continue
+    //remove the root from p.path using substring and store the remaining in filerel
+    commitPath= root+'\.imperium\.commit'+headHash+filerel
+    if commitPath does not exist && "created: "+filerel does not belong to staged:
+      notStaged.push("created: "+filerel)
+    else:
+      if commitPath exists:
+        if compareFiles(p.path(),commitPath) shows differences:
+          notStaged.push("modified: "+filerel)
+  ``` 
+  This covers all cases when .commit exists.
+
+  Now let us talk about what happens when we want to see the status before making a single commit.
+
+  We recursively go through the root once again and check if the current path (lets call it p.path()) has been staged or not. If not, then we add the filename to the notStaged vector as "created".
+
+  ```
+  if root+/.imperium/.commit does not exist:
+    recursive directory iterator(root):
+      if toBeIgnored(p.path()):
+        continue
+      //remove the root from p.path using substring and store the remaining in filerel
+      if "created: "+filerel does not exist in staged vector: // u may also check for existance of root+/.imperium/.add+filerel
+        notStaged.push("created: "+filerel)
+ ```
+
+ That's it!
+
+ Now simply output the contents of staged and notStaged vectors!
+
 # <center/>CONCLUSION
 
 This system despite working as promised, is no where near the sophistication of Git. As a starting Dev, you might or might not have noticed a few bugs in our approaches. Nevertheless, here's a list of a few of them below:
