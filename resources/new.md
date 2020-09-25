@@ -23,6 +23,8 @@ We will go through the following steps in the course of this tutorial:
 <li/> Staging Changes for the Commit (Add)
 <li/> Commiting them (Commit)
 <li/> Checking out to a specific commit (Checkout)
+<li/> REVERTING a COMMIT (revert)
+<li/> Status
 <li/> Conclusion and further innovations possible.
 
 ___
@@ -88,6 +90,7 @@ The first command the user enters is `imperium revert init` to initialize the fo
 
    1. `.imperium` folder
    2. `.imperiumIgnore` file (**optional**)
+   3. A `conflict` file in the `.imperium` folder just made, initialised with one line in it containing "false". (**Do this step only if you want to implement revert**)
 
    The `.imperium` has all the data and logs required for our VCS to function and the `.imperiumIgnore` file acts like a `.gitignore` file, it tells our program which files to not track.
 
@@ -174,6 +177,12 @@ ___
 
 Check if this path is for a file or a folder.
 
+
+The <sys/stat.h> header defines the structure of the data returned by the functions fstat(), lstat(), and stat().
+We use it to check directories and files as it is the fastest way to do this.
+
+[Resource](https://pubs.opengroup.org/onlinepubs/007908775/xsh/sysstat.h.html)
+
 ### If it's a file, go directly to SUB-PART B.
 
 <br/>
@@ -191,7 +200,9 @@ C++ has various functions in the
 
 header. (available C++ 17 and up, make sure to be on the latest gcc)
 
-Check [this](https://www.bogotobogo.com/python/python_traversing_directory_tree_recursively_os_walk.php) article for Python.
+filesystem library of cpp is used to efficiently handle files and folders. We need to use fs::recursive_ directory_ iterator() to go through each folder and all its nested files/folders. Its .path() function is something we will be using extensively to get the filenames of the file/folder currently being iterated.
+
+[FileSystem Header.](https://www.codingame.com/playgrounds/5659/c17-filesystem)
 
 So essentially you'll be generating links for all the sub-folders and files inside this folder and individually checking them. The procedure for that is in Subpart B below.
 
@@ -540,7 +551,198 @@ The idea is simple, we have the project's code and structure that we need to go 
     }
 
    ```
-  
+# <center/>REVERT
+
+>The git revert command can be considered an 'undo' type command, however, it is not a traditional undo operation. Instead of removing the commit from the project history, it figures out how to invert the changes introduced by the commit and appends a new commit with the resulting inverse content.
+
+>This prevents Git from losing history, which is important for the integrity of your revision history and for reliable collaboration.
+
+~ The Official [Atlassian's Guide to Git](https://www.atlassian.com/git/tutorials/undoing-changes/git-revert#:~:text=Summary,in%20regards%20to%20losing%20work)
+
+So, going into this functionality, we will try to achieve as much of Git's revert functionality.
+
+#### In your commit function check if this is the first commit by checking for the existance of a `.commit` folder or `commit.log` file. If they exist, retrieve the `HEAD` commit’s hash, which, if you added the latest hash on top instead of appending, will be the first line of `.commitLog` (your work has become easier!). Lets store this as `headHash`.
+<br/>
+
+#### The commit just before the `passedHash` is stored as `lastHash`.
+
+<br/>
+
+## *There are three cases to this:*
+
+### ***Case I: Reverting the latest commmit***
+
+In order to revert the latest commit we need to compare it with the penultimate commit to find out what needs to be changed. The way this works is as follows:
+
+1. Recursively copy the files from the `lastHash` and paste them in the root.
+
+2. Now you need to check for file creations. This can be done by recursively checking which files are present in the `headHash` but not in the `lastHash`(hence, created). Once a file satisfies this condition, delete it.
+
+### ***Case II : User is reverting a commit before the latest commit, but after the first one***
+
+So the first thing to do, which is common in all cases, is to check the `root` directory with the `headHash` files.
+
+If any file or directory is different, then the process is terminated, and we show a message asking the user to stash all uncommitted changes.
+
+Else, we have to keep these things in mind.
+
+1.  We recusively iterate through the `lastHash` and compare it with the realtive file in `headHash`. If it exists, and is **different**, (Subsequence A). Then this shouls be a merge conflict of Subsequence B, Type III.
+    
+    If it is not different or doesn't exist in the `headHash`, then copy the file from `lastHash` to `root`.
+
+1. We we need to recursively iterate the files and directories of the `passedHash` commit, and check if that particular fileName exists in the `lastHash`, if it doesn't, that means this particular file was created particularly in the `passedHash` commit. Now we check if the file exists in the `headHash` or not. If it does, we check the equality of these two files (Subsequence A). Two scenarios arise out of this:
+    
+    1. The file was not edited subsequently, in later commits, or was deleted.
+    <br/>
+
+    2. There were committed changes in the same files. (i.e,  the file exists in both `passedHash` and `headHash` and doesn't exist in `lastHash`)
+
+    ## Sub-case 1.
+      
+      This is a simple case, you simply have to delete the same file (take care of the relative file path), from the project `root`.
+
+    ## Sub-case 2.
+
+      This is the more complex case, which will involve a bit of logic. We'll be throwing a `Merge Conflict`. (Sequence B, part I)
+
+<br/>
+
+### ***Case III: If the the commit hash provided is the first commit***
+
+<br/>
+
+Then, all the files/folders in this commit have to be creations. As a result, undoing this commit should be the deletion of every file and folder.
+
+However a revert command is **not supposed** to change any actions of the later commits. Keeping this in mind, we need to check if these files in the first commit have been changed in later commits.
+
+To check for this, we recursively go through each file in the `root+”/.imperium/.commit”+passedHash`. 
+
+The current path will be retrieved in `p.path()`. Check if it is a file. If yes, extract the relative path (i.e the part after `passedHash`) and store it in, say, filerel. We need to compare `p.path()` with `root+”/.imperium/.commit/”+headHash`. Pass these two in the compareFile function to check for any differences.
+
+If the commited file is in the same state as the last commit, then there is no conflict and the revert command will simply delete it. 
+
+However if comparing the files (Subsequence A) returns a difference between the files, we cannot delete this file.
+
+### **Instead, such an action will lead to a merge conflict.**
+
+(Refer to Subsequence B, part II)
+
+At the end of the revert in this case, we will have accomplished the following:
+
+1) Files commited and having no differences with the last commit will be deleted
+2) Files commited and having differences with the last commit will throw a merge conflict
+3) Files created but not commited will show no changes
+
+## <center/> **SUBSEQUENCES**
+### <center/> **A**
+### <center/> Comparing Files (the compareFiles() function)
+
+This function, as the name suggests, compares two files' contents on seperate paths on the disk and returns `true` or `false`. 
+
+There are again, plenty of ways to go about this, but if you want to reduce dependencies and write moderately efficient C++ code, then you can make character buffers of the two files, compare their sizes first, (as two files with different sizes **must** be different in their contents). If their sizes are same, we compare the two buffers byte by byte, and return a flag as soon as we find two bytes different in their sequential processing.
+
+If such a flag is never returned, and we reach the end of our function, it signifies the equality of the two files. We shall correspondly return the same.
+
+***Note - There are more efficient ways to do this same operation, but they'll need you to link external libraries in your code. Namely, the [Boost Library](https://www.boost.org/).***
+<br/>
+
+### <center/> **B**
+### <center/> **MERGE CONFLICT**
+#### <center/> *Part I (Merge Conflict in Case II above)*
+
+<br/>
+
+Let's recap a bit.
+
+So, you found out that there are files in the `passedHash` commit, which aren't present in the `lastHash` commit, (the one before, in case you're losing track), but are present in the `headHash` (the latest commit). Then you compared the files between  `headHash` and `passedHash`, and found changes in them.
+
+On the same page? Nice.
+
+So, now you'll have a conflict. The files created exclusively in the commit you're trying to revert, have been modified in commits after that. A classic, merge conflict. SO,  NOW.
+
+You have to open this file in the `root`. You copied recursively from the `lastCommit`, so these extra files, are still in the `root`. You'll append (i.e, add to) this file, a line which says that these are the *Current Files*, and then add a new line which says,
+
+***"This file was created in your reverted commit, `passedHash`, but your subsequent changes have been preserved."***
+
+### *List all the files to the std out in which you found a merge conflict*
+
+Now throw the mandatoryCommit.(part IV)
+
+#### <center/> *Part II (Merge Conflict in Case III)*
+
+Let's recap a bit. (Again?)
+
+You, for some extraordinary reasons decided to revert your very first commit. (Never do that btw, that's not good practice. AT ALL). So, again, all files you created in this commit, should get deleted in this operation, **unless they've been edited later.** So, you'll compare all the files in the `passedHash` with the `headHash`. If they're different, then you'll have a merge conflict.
+
+
+You have to open this file in the `root`. You copied recursively from the `lastCommit`, so these extra files, are still in the `root`. You'll append (i.e, add to) this file, a line which says that these are the *Current Files*, and then add a new line which says,
+
+***"This file was created in your reverted commit, `passedHash`, but your subsequent changes have been preserved."***
+
+### *List all the files to the std out in which you found a merge conflict*
+
+Now throw the mandatoryCommit.(part IV)
+
+#### <center/> *Part III*
+
+Let's recap a bit. 
+
+You found out that there are changes in the same file between `lastHash` and `headHash`. Ie, a few changes were made in the `passedHash`. Classically, Git will try to automerge these seperate iles in `root`.
+
+However, for our purposes, we'll be opening the file in `root` and we'll append 
+
+***"MERGE CONFLICT, CURRENT FILE"***
+
+below this, and then further append the same file's contents from `lastHash`.
+
+### *List all the files to the std out in which you found a merge conflict*
+
+Now throw the mandatoryCommit.(part IV)
+
+#### <center/> *Part IV*
+
+Throwing the mandatoryCommit. So, in this utility, we will be deviating from Git's ideal course. Remember that `conflict` file in `.imperium/` which you initialised with a false?
+
+Yes. It's time has come.
+
+Truncate that file from `false` to `true`.
+
+
+Now add checks in your main function which reads this line from the conflict file, and locks all commands ( add, checkout, revert, commit, status), if that one line in the conflict file is true. All except one. Resolve.
+
+
+## Resolve.
+
+The way Git functions, it keeps a track of your line-by-line changes from commit to commit, and is able to intelligently tell if your merge conflicts have been resolved. But here, we can't do that, not in the current state of the project. And after each revert, the user has to make the conscious decision of committing the changes to history.
+
+But we do not want the user to commit the files with a merge conflict in their files. Think about it, it can break actual systems. So Resolve is that single line of defence.
+
+Unless, the user passes
+
+```terminal
+imperium resolve
+```
+
+all other imperium commands are frozen.
+
+Is this approach flawed? Yes. Can the user force his way to actively break their own code? Yes. But that can happen even in Git.
+
+So, when the user types the  ```resolve``` command, imperium unfreezes all the other commands by simply truncating the value in `./imperium/conflict` to false again. 
+
+We assume and trust the user's better judgement, and wait for him to add all the files, and commit again.
+
+
+And that was REVERT. And this is one of the many advanced functionalities Git offers. And this was just one.
+
+Rebase, Reset, Squash. All with their own incredibly complex logics.
+
+And this project doesn't have branches.
+
+Or networking for that matter. 
+
+Surely makes you appreciate Git more.
+
+
 # <center/>STATUS
 
 While working on an extensive project with multiple commits and multiple adds before a single commit, it becomes difficult for the user to keep a track of what has been already been staged and what remains to be. A fix to this problem is the status command which gives a log of all such information.
@@ -556,12 +758,10 @@ Files not staged for commit:
 
 modified: <fielname1>
 created: <fielname2>
-deleted: <fielname3>
 ```
-Unstaged changes will be tracked by comparing the last commit with the current state and checking if the changed files are present in the .add folder. If one is checking the status before the first commit, then, if .add folder exists, we compare the .add folder with the current state and get the files which have 
-1. not been staged at all
-2. changed after staging
-3. deleted after staging 
+Unstaged changes will be tracked by comparing the last commit with the current state and checking if the changed files are present in the .add folder. If one is checking the status before the first commit, then, if .add folder exists, we compare the `.add` folder with the current state and get the files which have
+1. Not been staged at all
+2. Changed after staging
 
 If neither .add nor .commit exists we simply consider everything from the root to be unstaged.
 
@@ -579,13 +779,13 @@ Create two vectors: staged and notStaged. These will conatin filenames of files 
 
 Lets first deal with the situation where both .add and .commit exist, i.e, some files have already been staged and this is not the first commit. Open the commit.log file and retrieve the HEAD hash.
 
-``` cpp
+~~~c++
 ifstream readHeadHash
 readHeadHash.open(root+'/.imperium/commit.log')
 getline(readHeadHash,headHash)
-```
+~~~
 headHash will contain the "HEAD" tag. Remove it using substring. Open the add log if it exists and read the file one line at a time.
-```
+```c++
 if add.log exists:
   //open add.log
   while !add.log.eof():
@@ -594,32 +794,34 @@ if add.log exists:
 ```
 Inside the while loop after reading each line:
 
-Lets say we read each file name in a variable called line. This line is the filename which has been added for staging. Extract the relative filepath (i.e, part after root) and store it in stagedPath. All these stagedFiles were either created newly or modified since the last commit.
+Lets say we read each file name in a variable called line. This line is the filename which has been added for staging. Extract the relative filepath (i.e, part after root) and store it in `stagedPath`. All these stagedFiles were either created newly or modified since the last commit.
 
 For created:
 
-Check if root+/.imperium/.commit+stagedPath exists. If no, it means that this file was created after the last commit and has been staged. So to the staged vector add the stagedPath with the tag of "created".
+Check if `root+/.imperium/.commit+stagedPath` exists. If no, it means that this file was created after the last commit and has been staged. So to the staged vector add the stagedPath with the tag of "created".
 
-```
+```c++
 if root+/.imperium/.commit+stagedPath does not exist:
   staged.push("created: "+stagedPath)
 ```
 For modified:
 
-  One way to go about this is to write the else part of the above code(ie, if the stagedPath has been commited earlier) - compare the file at stagedPath in .add with that in the last commit. If there is a difference between them, then add to the staged vector with the tag "modified". 
+  One way to go about this is to write the else part of the above code(ie, if the `stagedPath` has been commited earlier) - compare the file at `stagedPath` in .add with that in the last commit. If there is a difference between them, then add to the staged vector with the tag "modified". 
   
-  But since in this case we are only staging creation and modification, then if the stagedPath is not created, it has to be modified. So a simpler way to go about it will be to just check if the stagedPath has already been added to staged vector as "created". If no, add it as "modfied".
+  But since in this case we are only staging creation and modification, then if the `stagedPath` is not created, it has to be modified. So a simpler way to go about it will be to just check if the `stagedPath` has already been added to staged vector as "created". If no, add it as "modfied".
 
-  ```
+  ```c++
   if "created: "+stagedPath does not exist in staged:
     staged.push("modified: "+stagedPath)
   ``` 
 
-  We are done with the staged parts. Now moving on to unstaged changes. If a file in the .add file has since been modified, then it should fall under unstaged modified.
-  For this we will need the compareFile function that was discussed in the revert function. We need to compare the files in the add.log file with its current state. So call the compareFiles function, passing the stagedPath from .add and from the current root.
-  If there is a difference then push stagedPath to notStaged vector with tag "modified".
+  **We are done with the staged parts. Now moving on to unstaged changes.** If a file in the .add file has since been modified, then it should fall under unstaged modified.
 
-  ```
+  For this we will need the `compareFile` function that was discussed in the revert function. We need to compare the files in the add.log file with its current state. So call the compareFiles function, passing the stagedPath from .add and from the current root.
+
+  If there is a difference then push `stagedPath` to notStaged vector with tag "**modified**".
+
+  ```c++
   if (compareFiles(root+stagedPath, root+"/.imperium/.add"+stagedPath)):
     notStaged.push("modified: ",stagedPath)
   ```
@@ -627,25 +829,25 @@ For modified:
   At this point we have extracted all the information we could from the add.log files.
   We can come out of the while loop now.
 
-  Outside the while loop:
+  ## **Outside the while loop:**
 
   Now we need to think about those files which havent been staged at all since the last commit and have been modified since. So we traverse through the current root files and folders and check if they have been modified/created since the last commit but not added.
 
-  If the .commit folder exists, use the recursive directory iterator starting from the root.
+  If the `.commit` folder exists, use the recursive directory iterator starting from the root.
   Check if the current path being iterated(lets call this p.path()) is to be ignored, if yes, skip the rest of the function.
 
-  ```
+  ```c++
   if root+"/.imperium/.commit" exists:
     recursive directory iterator(root):
       if toBeIgnored(p.path()== true):
         continue
       ...
   ```    
-  Since we have to compare each of these p.path() with its corresponding committed state(if one exists), we also simultaneously declare a commitPath. If this commitPath does not exist and has not been staged, then it means it has been new created and has to be added to the notStaged vector.
+  Since we have to compare each of these `p.path()` with its corresponding committed state(if one exists), we also simultaneously declare a `commitPath`. If this `commitPath` does not exist and has not been staged, then it means it has been new created and has to be added to the notStaged vector.
 
-  If the commitPath does exist and it has not been staged, then we compare the current root file with the commitPath. If there are differences then we add this file to the notStaged folder with "modified" tag.
+  If the `commitPath` does exist and it has not been staged, then we compare the current root file with the `commitPath`. If there are differences then we add this file to the notStaged folder with "modified" tag.
 
-  ```
+  ```c++
     if toBeIgnored(p.path()== true):
         continue
     //remove the root from p.path using substring and store the remaining in filerel
@@ -657,13 +859,13 @@ For modified:
         if compareFiles(p.path(),commitPath) shows differences:
           notStaged.push("modified: "+filerel)
   ``` 
-  This covers all cases when .commit exists.
+  This covers all cases when `.commit` exists.
 
   Now let us talk about what happens when we want to see the status before making a single commit.
 
-  We recursively go through the root once again and check if the current path (lets call it p.path()) has been staged or not. If not, then we add the filename to the notStaged vector as "created".
+  We recursively go through the root once again and check if the current path (lets call it `p.path()`) has been staged or not. If not, then we add the filename to the notStaged vector as "**created**".
 
-  ```
+  ```c++
   if root+/.imperium/.commit does not exist:
     recursive directory iterator(root):
       if toBeIgnored(p.path()):
@@ -673,9 +875,11 @@ For modified:
         notStaged.push("created: "+filerel)
  ```
 
- That's it!
+ ## That's it!
 
  Now simply output the contents of staged and notStaged vectors!
+
+ <br/>
 
 # <center/>CONCLUSION
 
