@@ -507,6 +507,34 @@ Another check that we need to put in this case is the **deletion of folders betw
 ## Now you have a fully working commit function keeping a track of various stages of your commit and... we are done!!
 <br/>
 
+# <center/> Log
+
+Now, we need to create a function for listing all commits and their respective hashes. We will need it as `revert` and `checkout` require the commit hash as a parameter. This is really simple as all we need to do is list the contents of the `commit.log` file.
+
+   So our fuction will look something like this:
+
+   ```C++
+   void getCommitLog()
+   {
+     file = "/.imperium/.commit/commit.log"
+     file.read();
+     while(!file.eof())
+     {
+       print(file.line);
+     }
+   }
+   ```
+
+   We can call this fuction with a command like `imperium log`.
+
+   Upon entering this commmand we get the commit list printed on the terminal:
+
+   ```bash
+   a3a6d8371111382a09c4832fcd5ff15abd8ee3c5 -- second comit -->HEAD
+   bcccc3d84231bb2188723fa3eed2a7f574abcd69 -- first comit
+   ```
+
+
 # <center/>Checkout
 
 One of the primary reasons for using a Version Control System is the assurance that you can always go back to a past commit if you fuck up your code. And thus, our VCS won't be worth its name unless it supports checking out to any previous commit you want.
@@ -534,31 +562,6 @@ The idea is simple, we have the project's code and structure that we need to go 
    ```
 
    As with all other commands, we check for the second argument to figure out what the user wants to use. Here, `checkout` tells the program that we want to checkout to a commit and `hash` tells it which commit to checkout to. However, SHA-1 hashes are 40 characters long and completely random. There's no way the user is going to remember every commit's hash. So we need a way to list the commit's name and its hash so that the user can copy the required hash and paste it after `checkout`.
-
-   So let us start by first creating a function for listing all commits. This is reallt simple as all we need to do is list the contents of the `commit.log` file.
-
-   So our fuction will look something like this:
-
-   ```C++
-   void getCommitLog()
-   {
-     file = "/.imperium/.commit/commit.log"
-     file.read();
-     while(!file.eof())
-     {
-       print(file.line);
-     }
-   }
-   ```
-
-   We can call this fuction with a command like `imperium log`.
-
-   Upon entering this commmand we get list printed on the terminal:
-
-   ```bash
-   a3a6d8371111382a09c4832fcd5ff15abd8ee3c5 -- second comit -->HEAD
-   bcccc3d84231bb2188723fa3eed2a7f574abcd69 -- first comit
-   ```
 
    So a `checkout` command will look something like this:
 
