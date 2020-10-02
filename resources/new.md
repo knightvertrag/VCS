@@ -8,9 +8,9 @@
 
 ~ The ever reliant Wikipedia.
 
-In this 10 day programming exercise, this guide isn't meant to be a tutorial for you. Think of it as a document which will provide you a gentle nudge in the right direction. 
+In this 10 day programming exercise, this guide isn't meant to be a tutorial for you. Think of it as a document which will provide you a gentle nudge in the right direction.
 
-This guide will help you visualise the procedural complexity of a VCS and we will try to emulate the functionality of the OG VCS of them all - 
+This guide will help you visualise the procedural complexity of a VCS and we will try to emulate the functionality of the OG VCS of them all -
 
 **<center>GIT.</center>**
 
@@ -19,10 +19,10 @@ This guide will help you visualise the procedural complexity of a VCS and we wil
 We will go through the following steps in the course of this tutorial:
 
 <li/> Shell Scripting With Bash
-<li/> Initialising an empty Imperium Repo (Init)
-<li/> Staging Changes for the Commit (Add)
-<li/> Commiting them (Commit)
-<li/> Checking out to a specific commit (Checkout)
+<li/> Initialising an empty Imperium Repo (init)
+<li/> Staging Changes for the Commit (add)
+<li/> Commiting them (commit)
+<li/> Checking out to a specific commit (checkout)
 <li/> REVERTING a COMMIT (revert)
 <li/> Status
 <li/> Conclusion and further innovations possible.
@@ -52,7 +52,7 @@ We also want our commands to run from any directory, not just the root directory
 5. Now cd to the new `$HOME` directory and change permission of the binary to executable.
 6. Put the command script in the `~/.bashrc` to permanently add it to your system `PATH`.
 
-The build.sh file will look something like this: 
+The build.sh file will look something like this:
 
 ```bash
 #!/bin/bash
@@ -140,10 +140,10 @@ echo "source $PWD/imperium.sh" >> ~/.bashrc;
 
 # <center/>init() function
 
-The first command the user enters is `imperium revert init` to initialize the folder as an imperium repositiory. The function to handle this process is fairly simple. Lets see what we need to do step-by-step:
+The first command the user enters is `imperium init` to initialize the folder as an imperium repositiory. The function to handle this process is fairly simple. Lets see what we need to do step-by-step:
 
-1. First check if the folder is already initialized as a repo. To do this we simply check if the `.imperium` folder exists already or not. 
-This can be done by using the stat function cpp 
+1. First check if the folder is already initialized as a repo. To do this we simply check if the `.imperium` folder exists already or not.
+This can be done by using the stat function in C++
 
 The <sys/stat.h> header defines the structure of the data returned by the functions fstat(), lstat(), and stat().
 We use it to check directories and files as it is the fastest way to do this.
@@ -169,7 +169,7 @@ If it does we just print a message and return to main() function.
    Keep in mind that `/.imperium` **has** to added to the file for it to work correctly.
 
 4. Now we move on to the `.imperium` folder and start populating it.
-5. Create two files called `.commit.log` and `add.log`. These will be used to keep track of the commits and the add cache.
+5. Create two files called `commit.log` and `add.log`. These will be used to keep track of the commits and the add cache.
 
 Finally print a success statement.
 
@@ -208,7 +208,7 @@ git add [name of folder or path to file]
 
 Remember how we asked you to pass the location of the command call from the bash to your main program? yes, you should store that somewhere, in your program as a global variable, we'll be using it a lot.
 
-For all intents and purposes, i'll be referring to that supposed variable as `root`. 
+For all intents and purposes, i'll be referring to that supposed variable as `root`.
 
 In git, if you type -
 
