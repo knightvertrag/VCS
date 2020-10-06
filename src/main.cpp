@@ -710,6 +710,36 @@ void revert(char **argv)
                     }
                 }
             }
+            else
+            {
+                std::string commitFolderPath = root + "/.imperium/.commit/" + commitFolderName;
+                for (auto &p : fs::recursive_directory_iterator(commitFolderPath))
+                {
+                    struct stat s;
+                    std::string relPath = ((std::string)p.path()).substr((root + "/.imperium/.commit/" + commitFolderName).length());
+                    if (stat(p.path().c_str(), &s) == 0)
+                    {
+                        if (s.st_mode & S_IFDIR)
+                            continue;
+                        else if (s.st_mode & S_IFREG)
+                        {
+                            struct stat a;
+                            std::string rootPath = root + relPath;
+                            if (stat(rootPath.c_str(), &a) == 0)
+                            {
+                                if (compareFiles(rootPath, p.path()) == 0)
+                                    remove(rootPath.c_str());
+                                else
+                                {
+                                    std::ofstream ofile(rootPath, std::ofstream::out | std::ofstream::app);
+                                    ofile << "\n\nTHIS FILE WAS CREATED IN THE REVERTED COMMIT,\nhowever your changes in the succeeesing commits are saved here\n\n";
+                                    std::cout << "\033[1;31mMERGE CONFLICT IN : \033[0m" << rootPath << "\n";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             mergeConflict();
         }
