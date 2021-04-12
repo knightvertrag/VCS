@@ -81,7 +81,7 @@ fs::path imperium::repo_dir(Repository &repo, std::vector<fs::path> paths, bool 
 }
 
 /**
- * Same as repo_path, but create file at leaf of paths if absent.
+ * Same as repo_path, but create directories till leaf of paths if absent.
  * 
  * @param repo base repository
  * @param paths vector representing directory tree
@@ -112,12 +112,12 @@ imperium::Repository imperium::repo_create(fs::path path)
     Repository repo = Repository(path, true);
 
     //Make sure the path either doesn't exist or is an empty directory
-    if (fs::exists(repo.worktree))
+    if (fs::exists(repo.impDir))
     {
-        if (!fs::is_directory(repo.worktree))
+        if (!fs::is_directory(repo.impDir))
             throw path.generic_string() + "is not a directory";
-        // if (!fs::is_empty(repo.worktree))
-        //     throw path.generic_string() + "is not empty";
+        if (!fs::is_empty(repo.impDir))
+            throw path.generic_string() + "is not empty";
     }
     else
         fs::create_directories(repo.worktree);
