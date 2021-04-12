@@ -6,7 +6,7 @@ SRC		:= ./src
 INCLUDE	:= ./lib/include
 LIB		:= ./lib/lib/
 LIBRARIES	:= -l:libboost_program_options.a
-EXECUTABLE	:= main
+EXECUTABLE	:= imperium
 
 
 all: $(BIN)/$(EXECUTABLE)

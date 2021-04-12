@@ -16,13 +16,14 @@ namespace imperium
         fs::path worktree;
         fs::path impDir;
         INIReader conf;
-        Repository(fs::path path, bool force);
+        Repository(fs::path path, bool force = false);
     };
 
     fs::path repo_path(Repository &repo, std::vector<fs::path> paths);
     fs::path repo_file(Repository &repo, std::vector<fs::path> paths, bool mkdir = false);
     fs::path repo_dir(Repository &repo, std::vector<fs::path> paths, bool mkdir = false);
     Repository repo_create(fs::path path);
+    Repository repo_find(fs::path path = ".", bool required = true);
 };
 
 #endif

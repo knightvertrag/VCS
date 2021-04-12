@@ -13,14 +13,13 @@ namespace fs = std::filesystem;
 
 imperium::Repository::Repository(fs::path path, bool force)
 {
-    std::cout << "Repo starting\n";
     worktree = path;
-    impDir = fs::current_path() / ".imperium/";
-    // if (!(force && fs::exists(impDir)))
-    // {
-    //     std::string err = "Not an imperium repository" + path.generic_string();
-    //     throw err;
-    // }
+    impDir = path / ".imperium";
+    if (!(force || fs::exists(impDir)))
+    {
+        std::cerr << "Not an imperium repository" + path.generic_string();
+        exit(-1);
+    }
     // INIReader reader("config");
     // conf = reader;
     fs::path cf = repo_file(*this, {"config"});
@@ -71,7 +70,10 @@ fs::path imperium::repo_dir(Repository &repo, std::vector<fs::path> paths, bool 
         if (fs::is_directory(path))
             return path;
         else
-            throw "Not a directory" + path.generic_string();
+        {
+            std::cerr << "Not a directory" + path.generic_string();
+            exit(-1);
+        }
     }
     if (mkdir)
     {
@@ -125,7 +127,7 @@ imperium::Repository imperium::repo_create(fs::path path)
     repo_dir(repo, {"branches"}, true);
     repo_dir(repo, {"objects"}, true);
     repo_dir(repo, {"refs", "tags"}, true);
-    repo_dir(repo, {"branches", "heads"}, true);
+    repo_dir(repo, {"refs", "heads"}, true);
 
     std::ofstream desc_file(repo_file(repo, {"description"}));
     desc_file << "Unnamed repository; edit this file 'description' to name the repository.\n";
@@ -146,4 +148,23 @@ imperium::Repository imperium::repo_create(fs::path path)
     config_file.close();
 
     return repo;
+}
+
+imperium::Repository imperium::repo_find(fs::path path, bool required)
+{
+    path = fs::canonical(path);
+    if (fs::is_directory(path / ".imperium"))
+        return Repository(path);
+
+    fs::path parent = fs::canonical(path / "..");
+
+    if (parent == path)
+    {
+        if (required)
+        {
+            std::cerr << "Not an Imperium Repository\n";
+            exit(-1);
+        }
+    }
+    return repo_find(parent, required);
 }

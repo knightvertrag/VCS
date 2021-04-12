@@ -3,13 +3,26 @@
 
 int main(int argc, char *argv[])
 {
-    std::cout << argc << "\n";
-    if(strcmp(argv[1], "init") == 0)
+    if (strcmp(argv[1], "init") == 0)
     {
-        if(argc == 3)
-            imperium::repo_create(argv[3]);
+        if (argc == 3)
+            try
+            {
+                imperium::repo_create(argv[3]);
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
         else
-            imperium::repo_create("./");
+            try
+            {
+                imperium::repo_create("./");
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
     }
     return 0;
 }
