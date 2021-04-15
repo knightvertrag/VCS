@@ -16,11 +16,7 @@ namespace imperium
         fs::path worktree;
         fs::path impDir;
         INIReader conf;
-        Repository()
-        {
-            worktree = "";
-            impDir = "";
-        }
+        Repository(){}
         Repository(fs::path path, bool force = false);
     };
 
@@ -65,7 +61,7 @@ namespace imperium
      * @param required Raise error if not found
      * @return Repository object found
     */
-    Repository repo_find(fs::path path = ".", bool required = true);
+    Repository repo_find(fs::path path = "./", bool required = true);
 };
 
 #endif
