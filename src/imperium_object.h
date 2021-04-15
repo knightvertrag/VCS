@@ -10,10 +10,7 @@ namespace imperium
     public:
         imperium::Repository repo;
         //template <typename T>
-        Impobject()
-        {
-            repo = *(new Repository());
-        }
+        Impobject(){}
         Impobject(imperium::Repository repo, std::string data);
         void serialize();
         void deserialize();
@@ -27,11 +24,13 @@ namespace imperium
      * @return Imperium Impobject required
     */
     Impobject object_read(Repository repo, std::string sha);
-    Impobject object_write(Repository repo, bool actually_write = true);
+    template<typename T>
+    std::string object_write(T obj, bool actually_write = true);
 
     class Blobobject : public Impobject
     {
     public:
+        std::string fmt = "blob"; 
         std::string blobdata;
         Blobobject(imperium::Repository repo, std::string data);
         std::string serialize();
