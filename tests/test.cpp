@@ -7,6 +7,7 @@
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include <boost/compute/detail/sha1.hpp>
 
 void write_object()
 {
@@ -14,14 +15,16 @@ void write_object()
     using namespace boost::iostreams;
     std::stringstream compressed;
     std::stringstream decompressed;
-    string data = "Hello World";
+    string data = "blob 12\x00simple text";
     decompressed << data;
     boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
     out.push(boost::iostreams::zlib_compressor());
     out.push(decompressed);
     boost::iostreams::copy(out, compressed);
-    cout << compressed.str();
-    ofstream file("hello", ios::binary | ios::out);
+    // cout << compressed.str();
+    std::string sha = boost::compute::detail::sha1(compressed.str());
+    cout << sha << "\n";
+    ofstream file(sha, ios::binary | ios::out);
     file << compressed.str();
     file.close();
 }
@@ -32,7 +35,7 @@ void read_object()
     using namespace boost::iostreams;
     std::stringstream compressed;
     std::stringstream decompressed;
-    ifstream file("/home/anurag/Code/cpp/VCS/.git/objects/7b/bc84a9b8f7aa4f1ef3f78128bd8fd5766eaf1f", ios::binary | ios::in);
+    ifstream file("/home/anurag/Code/cpp/VCS/.git/objects/1a/a01e257d1da196915a35c083c0bdf56d5c13e9", ios::binary | ios::in);
     //ostringstream sout;
     copy(istreambuf_iterator<char>(file),
          istreambuf_iterator<char>(),
@@ -44,7 +47,7 @@ void read_object()
     string raw = decompressed.str();
     cout << raw << "\n";
     string obj_type = raw.substr(0, raw.find(" "));
-    ofstream outfile("hello", ios::out);
+    ofstream outfile("hello", ios::out | ios::binary);
     outfile << raw;
 }
 
