@@ -69,12 +69,15 @@ fs::path imperium::repo_dir(Repository &repo, std::vector<fs::path> paths, bool 
 
 fs::path imperium::repo_file(Repository &repo, std::vector<fs::path> paths, bool mkdir)
 {
-    //get rid of HEAD
-    //paths.pop_back();
+    std::string filename = paths.back();
+    //get rid of filename
+    paths.pop_back();
     try
     {
+        //get directory path to file
         fs::path path = repo_dir(repo, paths, mkdir);
-        return path;
+        //append file
+        return path / filename;
     }
     catch (const std::exception &e)
     {
@@ -97,11 +100,13 @@ imperium::Repository imperium::repo_create(fs::path path)
     else
         fs::create_directories(repo.worktree);
 
+    //make all the subdirectories and files under .imperium
     repo_dir(repo, {"branches"}, true);
     repo_dir(repo, {"objects"}, true);
     repo_dir(repo, {"refs", "tags"}, true);
     repo_dir(repo, {"refs", "heads"}, true);
 
+    //fill in the default info inside files
     std::ofstream desc_file(repo_file(repo, {"description"}));
     desc_file << "Unnamed repository; edit this file 'description' to name the repository.\n";
     desc_file.close();
@@ -113,9 +118,9 @@ imperium::Repository imperium::repo_create(fs::path path)
     std::ofstream config_file(repo_file(repo, {"config"}));
     std::vector<std::string> config_lines{
         "[core]\n",
-        "\trepositoryformatversion=2\n",
-        "\tfilemode=false\n",
-        "\tbare=false\n",
+        "\trepositoryformatversion = 2\n",
+        "\tfilemode = false\n",
+        "\tbare = false\n",
     };
     Configparser::initialize_config(config_file, config_lines);
     config_file.close();
