@@ -1,8 +1,7 @@
-#include "repository.hpp"
+#include "repository.h"
 
 #include <INIReader.h>
 #include "configParser.h"
-#include <assert.h>
 
 #include <iostream>
 #include <vector>
@@ -40,13 +39,6 @@ imperium::Repository::Repository(fs::path path, bool force)
     }
 }
 
-/**
- * Compute Path under Repo's impdir
- * 
- * @param repo base repository
- * @param paths to be appended
- * @return Constructed Path
- * */
 fs::path imperium::repo_path(Repository &repo, std::vector<fs::path> paths)
 {
     fs::path joined = repo.impDir;
@@ -55,13 +47,6 @@ fs::path imperium::repo_path(Repository &repo, std::vector<fs::path> paths)
     return joined;
 }
 
-/**
- * Same as repo_path, but create directory at leaf of paths if absent and mkdir == true.
- * 
- * @param repo base repository
- * @param paths vector representing directory tree
- * @return Path to directory created
-*/
 fs::path imperium::repo_dir(Repository &repo, std::vector<fs::path> paths, bool mkdir)
 {
     fs::path path = repo_path(repo, paths);
@@ -82,13 +67,6 @@ fs::path imperium::repo_dir(Repository &repo, std::vector<fs::path> paths, bool 
     }
 }
 
-/**
- * Same as repo_path, but create directories till leaf of paths if absent.
- * 
- * @param repo base repository
- * @param paths vector representing directory tree
- * @return Path to file created
-*/
 fs::path imperium::repo_file(Repository &repo, std::vector<fs::path> paths, bool mkdir)
 {
     //get rid of HEAD
@@ -104,11 +82,6 @@ fs::path imperium::repo_file(Repository &repo, std::vector<fs::path> paths, bool
     }
 }
 
-/**
- * Create a new Repository at path
- * 
- * @param path Path to create the repo at
-*/
 imperium::Repository imperium::repo_create(fs::path path)
 {
     Repository repo = Repository(path, true);
@@ -140,9 +113,9 @@ imperium::Repository imperium::repo_create(fs::path path)
     std::ofstream config_file(repo_file(repo, {"config"}));
     std::vector<std::string> config_lines{
         "[core]\n",
-        "repositoryformatversion=2\n",
-        "filemode=false\n",
-        "bare=false\n",
+        "\trepositoryformatversion=2\n",
+        "\tfilemode=false\n",
+        "\tbare=false\n",
     };
     Configparser::initialize_config(config_file, config_lines);
     config_file.close();
@@ -154,7 +127,7 @@ imperium::Repository imperium::repo_find(fs::path path, bool required)
 {
     path = fs::canonical(path);
     if (fs::is_directory(path / ".imperium"))
-        return Repository(path);
+        return Repository(path, false);
 
     fs::path parent = fs::canonical(path / "..");
 
