@@ -9,11 +9,13 @@ namespace imperium
     {
     public:
         imperium::Repository repo;
+        std::string fmt;
+        std::string data;
         //template <typename T>
-        Impobject(){}
+        Impobject() {}
         Impobject(imperium::Repository repo, std::string data);
-        void serialize();
-        void deserialize();
+        // void serialize();
+        // void deserialize();
     };
 
     /**
@@ -24,14 +26,12 @@ namespace imperium
      * @return Imperium Impobject required
     */
     Impobject object_read(Repository repo, std::string sha);
-    template<typename T>
+    template <typename T>
     std::string object_write(T obj, bool actually_write = true);
 
     class Blobobject : public Impobject
     {
     public:
-        std::string fmt = "blob"; 
-        std::string blobdata;
         Blobobject(imperium::Repository repo, std::string data);
         std::string serialize();
         void deserialize(std::string data);
@@ -40,7 +40,6 @@ namespace imperium
     class Treeobject : public Impobject
     {
     public:
-        std::string treedata;
         Treeobject(Repository repo, std::string data);
         void serialize(Treeobject treeobj);
     };
@@ -48,7 +47,6 @@ namespace imperium
     class Commitobject : public Impobject
     {
     public:
-        std::string commitdata;
         Commitobject(Repository repo, std::string data);
         void serialize(Commitobject commitobj);
     };
@@ -56,7 +54,6 @@ namespace imperium
     class Tagobject : public Impobject
     {
     public:
-        std::string tagdata;
         Tagobject(Repository repo, std::string data);
         void serialize(Tagobject tagobj);
     };

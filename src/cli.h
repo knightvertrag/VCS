@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include "repository.h"
+#include "imperium_object.h"
 
 namespace fs = std::filesystem;
 
@@ -13,15 +14,28 @@ namespace imperium
      * 
      * @param path Optional. Path to worktree
     */
-    inline void init(fs::path path = "./")
+    inline Repository init(fs::path path = "./")
     {
         try
         {
-            imperium::repo_create(path);
+            return imperium::repo_create(path);
         }
         catch (const std::exception &e)
         {
             std::cerr << e.what() << '\n';
+        }
+    }
+    /**
+     * Cat object content and type
+     * 
+     * @param t Flag to specify entire content or just type
+    */
+    inline void cat_file(char t)
+    {
+        if (t == 't')
+        {
+            Repository repo = repo_find();
+            Impobject blob = object_read(repo, "");
         }
     }
 }

@@ -14,6 +14,7 @@
 #include "repository.h"
 namespace fs = std::filesystem;
 
+
 imperium::Impobject imperium::object_read(Repository repo, std::string sha)
 {
     auto subdir = sha.substr(0, 2);
@@ -48,7 +49,7 @@ template <typename T>
 std::string imperium::object_write(T obj, bool actually_write)
 {
     std::string data = obj.serialize();
-    std::string result = obj.fmt + " " + std::to_string(obj.blobdata.size() + 1) + "\x00" + data;
+    std::string result = obj.fmt + " " + std::to_string(obj.data.size() + 1) + "\x00" + data;
     std::string sha = boost::compute::detail::sha1(result);
     std::string folder_name = sha.substr(0, 2);
     std::string file_name = sha.substr(2);
@@ -72,15 +73,16 @@ std::string imperium::object_write(T obj, bool actually_write)
 imperium::Blobobject::Blobobject(imperium::Repository repository, std::string data)
 {
     repo = repository;
+    fmt = "blob";
     deserialize(data);
 }
 
 std::string imperium::Blobobject::serialize()
 {
-    return blobdata;
+    return this->data;
 }
 
 void imperium::Blobobject::deserialize(std::string data)
 {
-    blobdata = data;
+    this->data = data;
 }

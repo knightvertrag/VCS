@@ -35,7 +35,7 @@ void read_object()
     using namespace boost::iostreams;
     std::stringstream compressed;
     std::stringstream decompressed;
-    ifstream file("/home/anurag/Code/cpp/VCS/.git/objects/1a/a01e257d1da196915a35c083c0bdf56d5c13e9", ios::binary | ios::in);
+    ifstream file("/home/anurag/Code/cpp/VCS/.git/objects/0e/ead9e48e5ee82e86f5a40ef02e8ab81b691e2c", ios::binary | ios::in);
     //ostringstream sout;
     copy(istreambuf_iterator<char>(file),
          istreambuf_iterator<char>(),
@@ -45,10 +45,15 @@ void read_object()
     in.push(compressed);
     boost::iostreams::copy(in, decompressed);
     string raw = decompressed.str();
-    cout << raw << "\n";
+    //cout << raw << "\n";
     string obj_type = raw.substr(0, raw.find(" "));
     ofstream outfile("hello", ios::out | ios::binary);
     outfile << raw;
+    ifstream hellofile("hello", ios::binary | ios::in);
+    char reading[50];
+    hellofile.read(reading, 50);
+    for (int i = 0; i < 50; i++)
+        cout << reading[i];
 }
 
 int main()
