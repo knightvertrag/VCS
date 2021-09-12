@@ -9,11 +9,10 @@ namespace imperium
     {
     public:
         imperium::Repository repo;
-        std::string fmt;
+        std::string type;
         std::string data;
         //template <typename T>
-        Impobject() {}
-        Impobject(imperium::Repository repo, std::string data);
+        Impobject(imperium::Repository repo, std::string data, std::string type) : repo(repo), type(type), data(data){};
         // void serialize();
         // void deserialize();
     };
@@ -32,7 +31,7 @@ namespace imperium
     class Blobobject : public Impobject
     {
     public:
-        Blobobject(imperium::Repository repo, std::string data);
+        Blobobject(imperium::Repository repo, std::string data, std::string type);
         std::string serialize();
         void deserialize(std::string data);
     };

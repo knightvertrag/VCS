@@ -14,11 +14,10 @@
 #include "repository.h"
 namespace fs = std::filesystem;
 
-
 imperium::Impobject imperium::object_read(Repository repo, std::string sha)
 {
-    auto subdir = sha.substr(0, 2);
-    auto objfile = sha.substr(2);
+    std::string subdir = sha.substr(0, 2);
+    std::string objfile = sha.substr(2);
     fs::path path = repo_file(repo, {"objects", subdir, objfile});
     std::cout << path << "\n";
     std::ifstream file(path, std::ios::binary | std::ios::in);
@@ -32,11 +31,14 @@ imperium::Impobject imperium::object_read(Repository repo, std::string sha)
     in.push(compressed);
     boost::iostreams::copy(in, decompressed);
     std::string raw = decompressed.str();
-    std::cout << raw;
+    // std::cout << raw;
     std::string obj_type = raw.substr(0, raw.find(" "));
     std::string data = raw.substr(raw.find(" "));
     if (obj_type == "blob")
-        return Blobobject(repo, raw);
+    {
+        imperium::Blobobject blob = Blobobject(repo, raw, obj_type);
+        return blob;
+    }
     // else if(obj_type == "tree")
     //     return Treeobject(repo, raw);
     // else if(obj_type == "commit")
@@ -70,10 +72,8 @@ std::string imperium::object_write(T obj, bool actually_write)
     return "big fail";
 }
 
-imperium::Blobobject::Blobobject(imperium::Repository repository, std::string data)
+imperium::Blobobject::Blobobject(imperium::Repository repo, std::string data, std::string type) : imperium::Impobject::Impobject(repo, data, type)
 {
-    repo = repository;
-    fmt = "blob";
     deserialize(data);
 }
 

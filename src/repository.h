@@ -1,5 +1,4 @@
-#ifndef IMPERIUM_REPOSITORY_H_
-#define IMPERIUM_REPOSITORY_H_
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -16,7 +15,7 @@ namespace imperium
         fs::path worktree;
         fs::path impDir;
         INIReader conf;
-        Repository(){}
+        Repository() {}
         Repository(fs::path path, bool force = false);
     };
 
@@ -28,7 +27,7 @@ namespace imperium
     * @return Constructed Path
     * */
     fs::path repo_path(Repository &repo, std::vector<fs::path> paths);
-    
+
     /**
      * Same as repo_path, but create directories till leaf of paths if absent.
      * 
@@ -63,5 +62,3 @@ namespace imperium
     */
     Repository repo_find(fs::path path = "./", bool required = true);
 };
-
-#endif
