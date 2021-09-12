@@ -19,11 +19,10 @@ namespace imperium
     }
     void setupInit(CLI::App &app)
     {
-        fs::path path = "./";
         auto options = std::make_shared<InitOptions>();
-        options->path = path;
+        options->path = "./";
         auto init = app.add_subcommand("init", "Initialize an Imperium Repository");
-        init->add_option("path", path, "Path to repository");
+        init->add_option("-p, --path", options->path, "Path to repository");
         init->callback([options]()
                        { runInit(*options); });
     }
