@@ -47,30 +47,30 @@ imperium::Impobject imperium::object_read(Repository repo, std::string sha)
     //     return Tagobject(repo, raw);
 }
 
-template <typename T>
-std::string imperium::object_write(T obj, bool actually_write)
-{
-    std::string data = obj.serialize();
-    std::string result = obj.fmt + " " + std::to_string(obj.data.size() + 1) + "\x00" + data;
-    std::string sha = boost::compute::detail::sha1(result);
-    std::string folder_name = sha.substr(0, 2);
-    std::string file_name = sha.substr(2);
-    if (actually_write)
-    {
-        std::stringstream compressed;
-        std::stringstream decompressed;
-        decompressed << result;
-        boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
-        out.push(boost::iostreams::zlib_compressor());
-        out.push(decompressed);
-        boost::iostreams::copy(out, compressed);
-        fs::path path = repo_file(obj.repo, {"objects", folder_name, file_name}, actually_write);
-        std::ofstream file("path", std::ios::out | std::ios::binary);
-        file << compressed.str();
-        return sha;
-    }
-    return "big fail";
-}
+// template <typename T>
+// std::string imperium::object_write(T &obj, bool actually_write)
+// {
+//     std::string data = obj.serialize();
+//     std::string result = obj.fmt + " " + std::to_string(obj.data.size() + 1) + "\x00" + data;
+//     std::string sha = boost::compute::detail::sha1(result);
+//     std::string folder_name = sha.substr(0, 2);
+//     std::string file_name = sha.substr(2);
+//     if (actually_write)
+//     {
+//         std::stringstream compressed;
+//         std::stringstream decompressed;
+//         decompressed << result;
+//         boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
+//         out.push(boost::iostreams::zlib_compressor());
+//         out.push(decompressed);
+//         boost::iostreams::copy(out, compressed);
+//         fs::path path = repo_file(obj.repo, {"objects", folder_name, file_name}, actually_write);
+//         std::ofstream file("path", std::ios::out | std::ios::binary);
+//         file << compressed.str();
+//         return sha;
+//     }
+//     return "big fail";
+// }
 
 imperium::Blobobject::Blobobject(imperium::Repository repo, std::string data) : imperium::Impobject::Impobject(repo, data, "blob")
 {

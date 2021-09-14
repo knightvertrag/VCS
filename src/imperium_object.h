@@ -3,6 +3,18 @@
 
 #include "repository.h"
 
+#include "imperium_object.h"
+#include <filesystem>
+#include <fstream>
+#include <algorithm>
+#include <iterator>
+#include <zlib.h>
+#include <boost/compute/detail/sha1.hpp>
+#include <iostream>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+
 namespace imperium
 {
     class Impobject
@@ -26,7 +38,29 @@ namespace imperium
     */
     Impobject object_read(Repository repo, std::string sha);
     template <typename T>
-    std::string object_write(T obj, bool actually_write = true);
+    std::string object_write(T &obj, bool actually_write = true)
+    {
+        std::string data = obj.serialize();
+        std::string result = obj.type + " " + std::to_string(obj.data.size() + 1) + "\x00" + data;
+        std::string sha = boost::compute::detail::sha1(result);
+        std::string folder_name = sha.substr(0, 2);
+        std::string file_name = sha.substr(2);
+        if (actually_write)
+        {
+            std::stringstream compressed;
+            std::stringstream decompressed;
+            decompressed << result;
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
+            out.push(boost::iostreams::zlib_compressor());
+            out.push(decompressed);
+            boost::iostreams::copy(out, compressed);
+            fs::path path = repo_file(obj.repo, {"objects", folder_name, file_name}, actually_write);
+            std::ofstream file(path, std::ios::out | std::ios::binary);
+            file << compressed.str();
+            return sha;
+        }
+        return "big fail";
+    }
 
     class Blobobject : public Impobject
     {
