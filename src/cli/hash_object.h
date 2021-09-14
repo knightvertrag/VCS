@@ -34,7 +34,7 @@ namespace imperium
     void setupHashObject(CLI::App &app)
     {
         auto options = std::make_shared<HashObjectOptions>();
-        auto hash_object = app.add_subcommand("hash-object", "Hash a file");
+        auto hash_object = app.add_subcommand("hash-object", "Compute object ID and creates a blob from a file");
         hash_object->add_option("Path", options->path, "Path to the file")->required();
         hash_object->callback([options]()
                               { runHashObject(*options); });
