@@ -3,6 +3,7 @@
 #include <CLI11.hpp>
 #include <cli/init.h>
 #include <cli/cat_file.h>
+#include <cli/hash_object.h>
 #include "repository.h"
 #include "imperium_object.h"
 
@@ -15,6 +16,7 @@ int main(int argc, char *argv[])
     app.require_subcommand(1);
     imperium::setupInit(app);
     imperium::setupCatFile(app);
+    imperium::setupHashObject(app);
     // auto cat_file = app.add_subcommand("cat-file", "Parse an object file");
     // std::string cat_file_sha;
     // cat_file->add_option("hash", cat_file_sha, "Hash of the object");
