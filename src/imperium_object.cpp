@@ -19,7 +19,7 @@ imperium::Impobject imperium::object_read(Repository repo, std::string sha)
     std::string subdir = sha.substr(0, 2);
     std::string objfile = sha.substr(2);
     fs::path path = repo_file(repo, {"objects", subdir, objfile});
-    std::cout << path << "\n";
+    //std::cout << path << "\n";
     std::ifstream file(path, std::ios::binary | std::ios::in);
     std::stringstream compressed;
     std::stringstream decompressed;
@@ -33,10 +33,10 @@ imperium::Impobject imperium::object_read(Repository repo, std::string sha)
     std::string raw = decompressed.str();
     // std::cout << raw;
     std::string obj_type = raw.substr(0, raw.find(" "));
-    std::string data = raw.substr(raw.find(" "));
+    std::string data = raw.substr(raw.find(" ") + 1);
     if (obj_type == "blob")
     {
-        imperium::Blobobject blob = Blobobject(repo, raw, obj_type);
+        imperium::Blobobject blob = Blobobject(repo, raw);
         return blob;
     }
     // else if(obj_type == "tree")
@@ -72,7 +72,7 @@ std::string imperium::object_write(T obj, bool actually_write)
     return "big fail";
 }
 
-imperium::Blobobject::Blobobject(imperium::Repository repo, std::string data, std::string type) : imperium::Impobject::Impobject(repo, data, type)
+imperium::Blobobject::Blobobject(imperium::Repository repo, std::string data) : imperium::Impobject::Impobject(repo, data, "blob")
 {
     deserialize(data);
 }

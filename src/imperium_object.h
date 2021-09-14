@@ -31,7 +31,7 @@ namespace imperium
     class Blobobject : public Impobject
     {
     public:
-        Blobobject(imperium::Repository repo, std::string data, std::string type);
+        Blobobject(imperium::Repository repo, std::string data);
         std::string serialize();
         void deserialize(std::string data);
     };

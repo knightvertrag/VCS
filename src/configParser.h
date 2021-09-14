@@ -1,5 +1,4 @@
-#ifndef IMPERIUM_CONFIGPARSER_H_
-#define IMPERIUM_CONFIGPARSER_H_
+#pragma once
 
 #include <fstream>
 #include <vector>
@@ -11,19 +10,20 @@ namespace fs = std::filesystem;
  * Functions to work with the config file
  * @todo Convert this to a proper map parser
 */
-class Configparser 
+class Configparser
 {
-    private:
-        fs::path file_path;
-        std::fstream file;
-    public:
+private:
+    fs::path file_path;
+    std::fstream file;
+
+public:
     /**
      * initialize the config file with a vector
      * @param config_file Config file to initialize
     */
     static void initialize_config(std::ofstream &config_file, std::vector<std::string> vec)
     {
-        for(auto l : vec)
+        for (auto l : vec)
             config_file << l;
     }
 
@@ -43,5 +43,3 @@ class Configparser
         return res;
     }
 };
-
-#endif // IMPERIUM_CONFIGPARSER_H_

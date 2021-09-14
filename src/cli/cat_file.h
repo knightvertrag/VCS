@@ -23,7 +23,7 @@ namespace imperium
     {
         auto options = std::make_shared<CatFileOptions>();
         auto cat_file = app.add_subcommand("cat-file", "Show contents of object");
-        cat_file->add_option("-s, --sha", options->sha, "SHA of the object file")->required();
+        cat_file->add_option("sha", options->sha, "SHA of the object file")->required();
         cat_file->callback([options]()
                            { runCatFile(*options); });
     }
