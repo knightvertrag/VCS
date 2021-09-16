@@ -25,8 +25,8 @@ namespace imperium
         std::string data;
         //template <typename T>
         Impobject(imperium::Repository repo, std::string data, std::string type) : repo(repo), type(type), data(data){};
-        // void serialize();
-        // void deserialize();
+        virtual std::string serialize() = 0;
+        virtual void deserialize(std::string data) = 0;
     };
 
     /**
@@ -36,31 +36,9 @@ namespace imperium
      * @param sha SHA-1 to extract path
      * @return Imperium Impobject required
     */
-    Impobject object_read(Repository repo, std::string sha);
-    template <typename T>
-    std::string object_write(T &obj, bool actually_write = true)
-    {
-        std::string data = obj.serialize();
-        std::string result = obj.type + " " + std::to_string(obj.data.size() + 1) + "\x00" + data;
-        std::string sha = boost::compute::detail::sha1(result);
-        std::string folder_name = sha.substr(0, 2);
-        std::string file_name = sha.substr(2);
-        if (actually_write)
-        {
-            std::stringstream compressed;
-            std::stringstream decompressed;
-            decompressed << result;
-            boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
-            out.push(boost::iostreams::zlib_compressor());
-            out.push(decompressed);
-            boost::iostreams::copy(out, compressed);
-            fs::path path = repo_file(obj.repo, {"objects", folder_name, file_name}, actually_write);
-            std::ofstream file(path, std::ios::out | std::ios::binary);
-            file << compressed.str();
-            return sha;
-        }
-        return "big fail";
-    }
+    Impobject *object_read(Repository repo, std::string sha);
+    //template <typename T>
+    std::string object_write(Impobject &obj, bool actually_write = true);
 
     class Blobobject : public Impobject
     {
@@ -74,21 +52,21 @@ namespace imperium
     {
     public:
         Treeobject(Repository repo, std::string data);
-        void serialize(Treeobject treeobj);
+        std::string serialize();
     };
 
     class Commitobject : public Impobject
     {
     public:
         Commitobject(Repository repo, std::string data);
-        void serialize(Commitobject commitobj);
+        std::string serialize();
     };
 
     class Tagobject : public Impobject
     {
     public:
         Tagobject(Repository repo, std::string data);
-        void serialize(Tagobject tagobj);
+        std::string serialize();
     };
 }
 

@@ -16,7 +16,8 @@ namespace imperium
     {
         auto repo = imperium::repo_find();
         auto obj = imperium::object_read(repo, op.sha);
-        std::cout << obj.data << "\n";
+        std::cout << obj->data << "\n";
+        delete obj;
     }
 
     void setupCatFile(CLI::App &app)
