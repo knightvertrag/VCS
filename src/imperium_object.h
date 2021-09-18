@@ -44,7 +44,7 @@ namespace imperium
      * Serialize provided object, compress and write to object database. Returns the SHA-1 checksum.
      * 
      * @param obj Reference to the object being written
-     * @param actuall_write Default = true. If false return sha and exit
+     * @param actually_write Default = true. If false return sha and exit
      * @return SHA-1 Checksum of the contents 
     */
     std::string object_write(Impobject &obj, bool actually_write = true);

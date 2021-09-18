@@ -3,8 +3,6 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
-#include <iterator>
-#include <zlib.h>
 #include <boost/compute/detail/sha1.hpp>
 #include <iostream>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -19,7 +17,6 @@ imperium::Impobject *imperium::object_read(Repository repo, std::string sha)
     std::string subdir = sha.substr(0, 2);
     std::string objfile = sha.substr(2);
     fs::path path = repo_file(repo, {"objects", subdir, objfile});
-    //std::cout << path << "\n";
     std::ifstream file(path, std::ios::binary | std::ios::in);
     std::stringstream compressed;
     std::stringstream decompressed;
@@ -31,7 +28,6 @@ imperium::Impobject *imperium::object_read(Repository repo, std::string sha)
     in.push(compressed);
     boost::iostreams::copy(in, decompressed);
     std::string raw = decompressed.str();
-    // std::cout << raw;
     std::string obj_type = raw.substr(0, raw.find(" "));
     std::string data = raw.substr(raw.find(" ") + 1);
     if (obj_type == "blob")
@@ -44,7 +40,7 @@ imperium::Impobject *imperium::object_read(Repository repo, std::string sha)
     // else if(obj_type == "commit")
     //     return Commitobject(repo, raw);
     // else if(obj_type == "tag")
-    //     return Tagobject(repo, raw);
+    return nullptr;
 }
 
 std::string imperium::object_write(Impobject &obj, bool actually_write)

@@ -1,6 +1,5 @@
 #include "repository.h"
 
-#include <INIReader.h>
 #include "configParser.h"
 
 #include <iostream>
@@ -19,24 +18,7 @@ imperium::Repository::Repository(fs::path path, bool force)
         std::cerr << "Not an imperium repository" + path.generic_string();
         exit(-1);
     }
-    // INIReader reader("config");
-    // conf = reader;
-    fs::path cf = repo_file(*this, {"config"});
-    if (fs::exists(cf))
-    {
-        INIReader reader("cf");
-        conf = reader;
-    }
-    else if (!force)
-        throw "Configuration file missing";
-    if (!force)
-    {
-        int vers = conf.GetInteger("core", "repositoryformatversion", -1);
-        if (vers != 0)
-        {
-            std::string err = "Unsupported repositoryformatversion" + vers;
-        }
-    }
+    // TODO: Add checks for config file(Low priority)
 }
 
 fs::path imperium::repo_path(Repository &repo, std::vector<fs::path> paths)

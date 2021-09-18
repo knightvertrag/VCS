@@ -11,13 +11,13 @@ namespace imperium
         std::string path;
     };
 
-    void runInit(InitOptions const &op)
+    inline void runInit(InitOptions const &op)
     {
         std::cout << "Initializing Imperium Repository...\n";
         imperium::repo_create(op.path);
         std::cout << "Done\n";
     }
-    void setupInit(CLI::App &app)
+    inline void setupInit(CLI::App &app)
     {
         auto options = std::make_shared<InitOptions>();
         options->path = "./";

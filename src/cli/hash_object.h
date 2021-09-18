@@ -17,7 +17,7 @@ namespace imperium
         fs::path path;
     };
 
-    void runHashObject(HashObjectOptions &opt)
+    inline void runHashObject(HashObjectOptions &opt)
     {
         //We are only hashing blob files for now
         //TODO: Create a system to hash every type of object
@@ -29,7 +29,7 @@ namespace imperium
         file_to_hash.close();
     }
 
-    void setupHashObject(CLI::App &app)
+    inline void setupHashObject(CLI::App &app)
     {
         auto options = std::make_shared<HashObjectOptions>();
         auto hash_object = app.add_subcommand("hash-object", "Compute object ID and creates a blob from a file");

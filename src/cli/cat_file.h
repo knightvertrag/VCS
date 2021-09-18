@@ -14,7 +14,7 @@ namespace imperium
         bool t;
     };
 
-    void runCatFile(CatFileOptions const &op)
+    inline void runCatFile(CatFileOptions const &op)
     {
         auto repo = imperium::repo_find();
         auto obj = imperium::object_read(repo, op.sha);
@@ -31,7 +31,7 @@ namespace imperium
         delete obj;
     }
 
-    void setupCatFile(CLI::App &app)
+    inline void setupCatFile(CLI::App &app)
     {
         auto options = std::make_shared<CatFileOptions>();
         auto cat_file = app.add_subcommand("cat-file", "Show contents of object");
