@@ -15,7 +15,7 @@ git checkout overhaul
 
 The project is using Boost for Zlib compression and SHA. We will pobably replace it with a lighter solution, but for now you will have to set up Boost. 
 
-`https://www.boost.org/doc/libs/1_75_0/more/getting_started/unix-variants.html`
+https://www.boost.org/doc/libs/1_75_0/more/getting_started/unix-variants.html
 
 Follow the above instructions to set up Boost. We are using the Iostreams library which requires binaries, so build them accordingly, and place them in a `lib` folder in the project root. Copy the `boost` folder from the downloaded archive and place it inside an `include` folder, also in the project root.
 
