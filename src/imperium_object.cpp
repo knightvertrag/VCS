@@ -50,7 +50,7 @@ imperium::Impobject *imperium::object_read(Repository repo, std::string sha)
 std::string imperium::object_write(Impobject &obj, bool actually_write)
 {
     std::string data = obj.serialize();
-    std::string result = obj.type + " " + std::to_string(obj.data.size()) + std::string{"\x00"} + data;
+    std::string result = obj.type + " " + std::to_string(obj.data.size()) + '\0' + data;
     std::string sha = boost::compute::detail::sha1(result);
     std::string folder_name = sha.substr(0, 2);
     std::string file_name = sha.substr(2);

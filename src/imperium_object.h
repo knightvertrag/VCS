@@ -1,5 +1,4 @@
-#ifndef IMPERIUM_IMPERIUM_OBJECT_H_
-#define IMPERIUM_IMPERIUM_OBJECT_H_
+#pragma once
 
 #include "repository.h"
 
@@ -17,27 +16,37 @@
 
 namespace imperium
 {
+    /**
+     * Abstract class to provide an interface for the concrete object types
+    */
     class Impobject
     {
     public:
         imperium::Repository repo;
         std::string type;
         std::string data;
-        //template <typename T>
         Impobject(imperium::Repository repo, std::string data, std::string type) : repo(repo), type(type), data(data){};
+
         virtual std::string serialize() = 0;
         virtual void deserialize(std::string data) = 0;
     };
 
     /**
-     * Read the Impobject_id from Imperium Repo
+     * Read the object file whose sha is provided.
      * 
      * @param repo Repository whose Impobjects need to be read
      * @param sha SHA-1 to extract path
-     * @return Imperium Impobject required
+     * @return Pointer of Impobject required
     */
     Impobject *object_read(Repository repo, std::string sha);
-    //template <typename T>
+
+    /**
+     * Serialize provided object, compress and write to object database. Returns the SHA-1 checksum.
+     * 
+     * @param obj Reference to the object being written
+     * @param actuall_write Default = true. If false return sha and exit
+     * @return SHA-1 Checksum of the contents 
+    */
     std::string object_write(Impobject &obj, bool actually_write = true);
 
     class Blobobject : public Impobject
@@ -69,5 +78,3 @@ namespace imperium
         std::string serialize();
     };
 }
-
-#endif // IMPERIUM_OBJECT_H_

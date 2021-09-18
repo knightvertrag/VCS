@@ -3,5 +3,6 @@
 .imperiumIgnore
 boost_1_75_0/
 lib/
+build/
 include/boost
 test.txt

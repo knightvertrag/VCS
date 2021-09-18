@@ -15,8 +15,6 @@ namespace imperium
     struct HashObjectOptions
     {
         fs::path path;
-        //Impobject object;
-        //bool actually_write;
     };
 
     void runHashObject(HashObjectOptions &opt)

@@ -15,7 +15,7 @@ run: clean all
 	@echo "run called"
 	./$(BIN)/$(EXECUTABLE)
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
+$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp $(SRC)/*.h $(SRC)/cli/*.h
 	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) -I ./src -L $(LIB) $(SRC)/main.cpp  $(SRC)/repository.cpp  $(SRC)/imperium_object.cpp -o $ $(BIN)/$(EXECUTABLE) $(LIBRARIES)
 
 tt:
