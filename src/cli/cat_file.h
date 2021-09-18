@@ -12,6 +12,7 @@ namespace imperium
         std::string sha;
         bool p;
         bool t;
+        bool s;
     };
 
     inline void runCatFile(CatFileOptions const &op)
@@ -28,6 +29,11 @@ namespace imperium
             std::cout << obj->data.substr(obj->data.find('\0')) << "\n";
             return;
         }
+        else if (op.s)
+        {
+            std::cout << obj->data.substr(obj->data.find(" "), obj->data.find('\0') - obj->data.find(" "));
+            return;
+        }
         delete obj;
     }
 
@@ -37,8 +43,9 @@ namespace imperium
         auto cat_file = app.add_subcommand("cat-file", "Show contents of object");
         cat_file->require_option(2);
         cat_file->add_option("sha", options->sha, "SHA of the object file")->required();
-        cat_file->add_flag("-p", options->p, "Pretty print content of object");
-        cat_file->add_flag("-t", options->t, "Print object type");
+        cat_file->add_flag("-p", options->p, "Pretty print contents of object based on type");
+        cat_file->add_flag("-t", options->t, "Show the object type");
+        cat_file->add_flag("-s", options->s, "Show the object size");
         cat_file->callback([options]()
                            { runCatFile(*options); });
     }

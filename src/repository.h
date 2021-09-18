@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <filesystem>
-#include <INIReader.h>
 
 namespace fs = std::filesystem;
 
@@ -14,8 +13,6 @@ namespace imperium
     public:
         fs::path worktree;
         fs::path impDir;
-        INIReader conf;
-        Repository() {}
         Repository(fs::path path, bool force = false);
     };
 
