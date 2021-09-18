@@ -738,7 +738,7 @@ class RequiredError : public ParseError {
             return RequiredError("At least 1 option from [" + option_list + "]");
         if(used < min_option) {
             return RequiredError("Requires at least " + std::to_string(min_option) + " options used and only " +
-                                     std::to_string(used) + "were given from [" + option_list + "]",
+                                     std::to_string(used) + " were given from [" + option_list + "]",
                                  ExitCodes::RequiredError);
         }
         if(max_option == 1)
