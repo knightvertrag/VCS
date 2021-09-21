@@ -4,5 +4,6 @@
 boost_1_75_0/
 lib/
 build/
+tests/
 include/boost
 test.txt
