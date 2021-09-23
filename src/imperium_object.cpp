@@ -1,4 +1,5 @@
 #include "imperium_object.h"
+#include "tree_object.h"
 
 #include <filesystem>
 #include <fstream>
@@ -32,11 +33,14 @@ imperium::Impobject *imperium::object_read(Repository repo, std::string sha)
     std::string data = raw.substr(raw.find(" ") + 1);
     if (obj_type == "blob")
     {
-        imperium::Blobobject *blob = new Blobobject(repo, raw);
+        Blobobject *blob = new Blobobject(repo, raw);
         return blob;
     }
-    // else if(obj_type == "tree")
-    //     return Treeobject(repo, raw);
+    else if (obj_type == "tree")
+    {
+        Treeobject *tree = new Treeobject(repo, raw);
+        return tree;
+    }
     // else if(obj_type == "commit")
     //     return Commitobject(repo, raw);
     // else if(obj_type == "tag")
@@ -80,4 +84,9 @@ std::string imperium::Blobobject::serialize()
 void imperium::Blobobject::deserialize(std::string data)
 {
     this->data = data;
+}
+
+void imperium::Blobobject::pretty_print()
+{
+    std::cout << data.substr(data.find('\0')) << "\n";
 }

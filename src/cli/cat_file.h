@@ -26,7 +26,7 @@ namespace imperium
         }
         else if (op.p)
         {
-            std::cout << obj->data.substr(obj->data.find('\0')) << "\n";
+            obj->pretty_print();
             return;
         }
         else if (op.s)

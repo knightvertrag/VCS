@@ -29,6 +29,7 @@ namespace imperium
 
         virtual std::string serialize() = 0;
         virtual void deserialize(std::string data) = 0;
+        virtual void pretty_print() = 0;
     };
 
     /**
@@ -53,15 +54,9 @@ namespace imperium
     {
     public:
         Blobobject(imperium::Repository repo, std::string data);
+        void pretty_print();
         std::string serialize();
         void deserialize(std::string data);
-    };
-
-    class Treeobject : public Impobject
-    {
-    public:
-        Treeobject(Repository repo, std::string data);
-        std::string serialize();
     };
 
     class Commitobject : public Impobject
