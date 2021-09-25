@@ -2,6 +2,7 @@
 #include <cli/init.h>
 #include <cli/cat_file.h>
 #include <cli/hash_object.h>
+#include <cli/write_tree.h>
 
 int main(int argc, char *argv[])
 {
@@ -10,6 +11,7 @@ int main(int argc, char *argv[])
     imperium::setupInit(app);
     imperium::setupCatFile(app);
     imperium::setupHashObject(app);
+    imperium::setupWriteTree(app);
 
     CLI11_PARSE(app, argc, argv);
     return 0;

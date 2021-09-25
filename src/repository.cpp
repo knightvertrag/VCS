@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 imperium::Repository::Repository(fs::path path, bool force)
 {
-    worktree = path;
+    worktree = fs::canonical(path);
     impDir = path / ".imperium";
     if (!(force || fs::exists(impDir)))
     {

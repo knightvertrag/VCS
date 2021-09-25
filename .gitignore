@@ -6,4 +6,4 @@ lib/
 build/
 tests/
 include/boost
-test.txt
+test*.txt

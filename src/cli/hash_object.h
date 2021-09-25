@@ -19,14 +19,8 @@ namespace imperium
 
     inline void runHashObject(HashObjectOptions &opt)
     {
-        //We are only hashing blob files for now
-        //TODO: Create a system to hash every type of object
-        std::ifstream file_to_hash(opt.path, std::ios::in);
-        std::stringstream blob_buffer;
-        blob_buffer << file_to_hash.rdbuf();
-        std::shared_ptr<Blobobject> blob = std::make_shared<Blobobject>(repo_find(), blob_buffer.str());
-        std::cout << object_write(*blob, true) << "\n";
-        file_to_hash.close();
+        std::string sha = Blobobject::blob_from_file(opt.path);
+        std::cout << sha << "\n";
     }
 
     inline void setupHashObject(CLI::App &app)
