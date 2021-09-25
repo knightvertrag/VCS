@@ -1,3 +1,7 @@
 .vscode/
 .imperium/
 .imperiumIgnore
+bin/
+include/
+lib/
+tests/
