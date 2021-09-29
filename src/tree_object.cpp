@@ -1,16 +1,28 @@
 #include "tree_object.h"
 #include "imperium_object.h"
+#include "blob_object.h"
 #include "repository.h"
 
 #include <filesystem>
+#include <memory>
 #include <boost/algorithm/hex.hpp>
 #include <map>
 
 using namespace imperium;
 namespace fs = std::filesystem;
 
-std::pair<uint32_t, TreeLeaf> parse_one(std::string raw, uint32_t start)
+/**
+ * Parse one entry in the tree object. Since entries do not have delimiters we parse one entry and return the starting index of the next one.
+ * 
+ * @param raw entire tree data
+ * @param start starting index of the current entry
+ * @return constructed TreeLeaf and starting index of next entry
+*/
+std::pair<uint32_t, TreeLeaf> parse_one(std::string &raw, uint32_t start)
 {
+    /**
+     * Each entry looks like => <mode> <relative path>\0<sha>
+    */
     uint32_t space_pos = raw.find(' ', start);
     uint32_t null_pos = raw.find('\0', space_pos);
     std::string mode = raw.substr(start, space_pos - start);
@@ -19,8 +31,7 @@ std::pair<uint32_t, TreeLeaf> parse_one(std::string raw, uint32_t start)
         mode = "0" + mode;
     }
     fs::path path = raw.substr(space_pos + 1, null_pos - space_pos);
-    std::string sha = boost::algorithm::hex(raw.substr(null_pos + 1, 20));
-    std::transform(sha.begin(), sha.end(), sha.begin(), ::tolower);
+    std::string sha = boost::algorithm::hex_lower(raw.substr(null_pos + 1, 20));
     return {null_pos + 21, TreeLeaf(mode, path, sha)};
 }
 
@@ -62,7 +73,6 @@ void Treeobject::deserialize(std::string data)
 
 std::string Treeobject::serialize()
 {
-    /*@Todo: Properly Serialize*/
     std::string res;
     for (auto item : items)
     {
@@ -85,15 +95,15 @@ std::shared_ptr<Treeobject> Treeobject::construct_tree(std::vector<fs::path> pat
         auto absolute_path = repo.worktree / path;
         if (absolute_path == (repo.worktree / ".imperium"))
             continue;
-        if (fs::is_directory(path))
+        if (fs::is_directory(absolute_path))
         {
-            //recursively contruct tree for this directory
+            // @Todo: recursively contruct tree for this directory
         }
         else
         {
             // Create blobs from content
             std::string sha = Blobobject::blob_from_file(absolute_path);
-            //create a map of path-><mode, object, sha>, mode shoudl be dynamic
+            // @Todo: mode should be dynamic
             entries.push_back(TreeLeaf("100644", path, sha));
         }
     }

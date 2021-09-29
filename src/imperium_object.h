@@ -1,18 +1,9 @@
 #pragma once
 
 #include "repository.h"
-
 #include "imperium_object.h"
-#include <filesystem>
-#include <fstream>
-#include <algorithm>
-#include <iterator>
-#include <zlib.h>
-#include <boost/compute/detail/sha1.hpp>
-#include <iostream>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
+
+#include <map>
 
 namespace imperium
 {
@@ -50,27 +41,12 @@ namespace imperium
     */
     std::string object_write(Impobject &obj, bool actually_write = true);
 
-    class Blobobject : public Impobject
-    {
-    public:
-        Blobobject(imperium::Repository repo, std::string data);
-        void pretty_print();
-        static std::string blob_from_file(fs::path path);
-        std::string serialize();
-        void deserialize(std::string data);
-    };
+    /**
+     * Parse data of format key-value pairs and a message. Used in parsing commits and tags.
+     * 
+     * @param data Raw string to be parsed
+     * @return Parsed map
+    */
+    std::map<std::string, std::string> kvlm_parse(std::string data);
 
-    class Commitobject : public Impobject
-    {
-    public:
-        Commitobject(Repository repo, std::string data);
-        std::string serialize();
-    };
-
-    class Tagobject : public Impobject
-    {
-    public:
-        Tagobject(Repository repo, std::string data);
-        std::string serialize();
-    };
 }

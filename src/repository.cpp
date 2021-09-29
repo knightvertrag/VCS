@@ -104,7 +104,7 @@ imperium::Repository imperium::repo_create(fs::path path)
         "\tfilemode = false\n",
         "\tbare = false\n",
     };
-    Configparser::initialize_config(config_file, config_lines);
+    //Configparser::initialize_config(config_file, config_lines);
     config_file.close();
 
     return repo;
