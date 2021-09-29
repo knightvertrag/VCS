@@ -26,7 +26,7 @@ void imperium::Blobobject::deserialize(std::string data)
 
 void imperium::Blobobject::pretty_print()
 {
-    std::cout << data.substr(data.find('\0')) << "\n";
+    std::cout << data.substr(data.find('\0') + 1) << "\n";
 }
 
 std::string imperium::Blobobject::blob_from_file(fs::path path)

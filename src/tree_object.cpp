@@ -53,6 +53,7 @@ void Treeobject::pretty_print()
 {
     for (auto &i : items)
     {
+        // find the object with the current i.sha to get type
         auto repo = repo_find();
         auto obj = object_read(repo, i.sha);
         std::cout << i.mode << " " << obj->type << " " << i.sha << "\t" << i.path.generic_string() << "\n";
@@ -67,7 +68,7 @@ Treeobject::Treeobject(Repository repo, std::string data) : Impobject(repo, data
 
 void Treeobject::deserialize(std::string data)
 {
-    data = data.substr(data.find('\0'));
+    data = data.substr(data.find('\0') + 1);
     this->items = parse_tree(data);
 }
 
