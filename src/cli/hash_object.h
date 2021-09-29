@@ -7,6 +7,7 @@
 #include <imperium_object.h>
 #include <fstream>
 #include <filesystem>
+#include <blob_object.h>
 
 namespace fs = std::filesystem;
 
