@@ -11,14 +11,13 @@ namespace cparse
 {
     class ConfigFile
     {
-    private:
-        fs::path path;
-        std::map<std::string, std::map<std::string, std::string>> data;
 
     public:
+        fs::path path;
+        std::map<std::string, std::map<std::string, std::string>> data;
         ConfigFile(fs::path path)
         {
-            auto file = std::fstream(path, std::ios::in);
+            std::fstream file(path, std::ios::in);
             std::string line;
             std::string section, key, value;
             while (std::getline(file, line, '\n'))

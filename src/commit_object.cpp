@@ -3,17 +3,25 @@
 #include "imperium_object.h"
 #include "configParser.h"
 
-using namespace imperium;
+#include <fstream>
+#include <chrono>
+#include <sstream>
 
-Commitobject::Commitobject(Repository repo, std::string data) : Impobject(repo, data, "commit")
-{
-    deserialize(data);
-}
+using namespace imperium;
 
 std::string Commitobject::serialize()
 {
     // @Todo: Properly serialize
-    return "";
+    std::vector<std::string> order = {"tree", "parent", "author", "committer", "message"};
+    std::map<std::string, std::string> mp;
+    mp["tree"] = this->tree;
+    mp["parent"] = this->parent;
+    mp["author"] = this->author;
+    mp["committer"] = this->committer;
+    mp["message"] = this->message;
+    std::string res = kv_serialize(mp, order);
+    this->data = res;
+    return res;
 }
 
 void Commitobject::deserialize(std::string data)
@@ -34,4 +42,25 @@ void Commitobject::pretty_print()
     std::cout << "author " << author << "\n";
     std::cout << "committer " << committer << "\n\n";
     std::cout << message << "\n\n";
+}
+
+Commitobject::Commitobject(Repository repo, std::string data) : Impobject(repo, data, "commit")
+{
+    deserialize(data);
+}
+
+Commitobject::Commitobject(std::string message) : Impobject(repo_find(), "", "commit")
+{
+    auto config_file = cparse::ConfigFile(repo.worktree / ".imperium" / "config");
+    std::string author = config_file.data["user"]["name"];
+    std::string email = config_file.data["user"]["email"];
+    auto p1 = std::chrono::system_clock::now();
+    auto time_stamp = std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count(); // @Todo: Add the timezone offset
+    auto tree = Treeobject::construct_tree({"."});                                                     // When INDEX is added this will be dynamic
+    std::string tree_id = object_write(*tree, false);
+    this->author = author + " " + "<" + email + ">" + " " + std::to_string(time_stamp);
+    this->committer = author + " " + "<" + email + ">" + " " + std::to_string(time_stamp);
+    this->tree = tree_id;
+    this->parent = tree_id;
+    this->message = message;
 }

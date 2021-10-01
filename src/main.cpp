@@ -3,6 +3,7 @@
 #include <cli/cat_file.h>
 #include <cli/hash_object.h>
 #include <cli/write_tree.h>
+#include <cli/commit.h>
 
 int main(int argc, char *argv[])
 {
@@ -12,6 +13,7 @@ int main(int argc, char *argv[])
     imperium::setupCatFile(app);
     imperium::setupHashObject(app);
     imperium::setupWriteTree(app);
+    imperium::setupCommit(app);
 
     CLI11_PARSE(app, argc, argv);
     return 0;

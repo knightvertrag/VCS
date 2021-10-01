@@ -15,6 +15,7 @@ namespace imperium
         std::string message;
 
         Commitobject(Repository repo, std::string data);
+        Commitobject(std::string message);
         std::string serialize();
         void deserialize(std::string data);
         void pretty_print();
