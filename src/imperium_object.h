@@ -47,6 +47,6 @@ namespace imperium
      * @param data Raw string to be parsed
      * @return Parsed map
     */
-    std::map<std::string, std::string> kvlm_parse(std::string data);
+    std::map<std::string, std::string> kv_parse(std::string data);
 
 }

@@ -1,10 +1,13 @@
 #include "imperium_object.h"
 #include "tree_object.h"
 #include "blob_object.h"
+#include "commit_object.h"
 
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <map>
+#include <set>
 #include <boost/compute/detail/sha1.hpp>
 #include <iostream>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -42,8 +45,11 @@ imperium::Impobject *imperium::object_read(Repository repo, std::string sha)
         Treeobject *tree = new Treeobject(repo, raw);
         return tree;
     }
-    // else if(obj_type == "commit")
-    //     return Commitobject(repo, raw);
+    else if (obj_type == "commit")
+    {
+        Commitobject *commit = new Commitobject(repo, raw);
+        return commit;
+    }
     // else if(obj_type == "tag")
     return nullptr;
 }
@@ -70,4 +76,25 @@ std::string imperium::object_write(Impobject &obj, bool actually_write)
         return sha;
     }
     return sha;
+}
+
+std::map<std::string, std::string> imperium::kv_parse(std::string data)
+{
+    std::map<std::string, std::string> res;
+    std::set<std::string> valid_keys = {"tree", "parent", "author", "committer"};
+    std::stringstream stream;
+    stream << data;
+    std::string line;
+    while (std::getline(stream, line, '\n'))
+    {
+        std::string key = line.substr(0, line.find(' '));
+        if (valid_keys.find(key) == valid_keys.end())
+        {
+            res["message"] = line;
+            continue;
+        }
+        std::string value = line.substr(line.find(' ') + 1);
+        res[key] = value;
+    }
+    return res;
 }

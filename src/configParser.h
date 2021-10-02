@@ -2,44 +2,40 @@
 
 #include <fstream>
 #include <vector>
+#include <map>
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
-/**
- * Functions to work with the config file
- * @todo Convert this to a proper map parser
-*/
-class Configparser
+namespace cparse
 {
-private:
-    fs::path file_path;
-    std::fstream file;
-
-public:
-    /**
-     * initialize the config file with a vector
-     * @param config_file Config file to initialize
-    */
-    static void initialize_config(std::ofstream &config_file, std::vector<std::string> vec)
+    class ConfigFile
     {
-        for (auto l : vec)
-            config_file << l;
-    }
+    private:
+        fs::path path;
+        std::map<std::string, std::map<std::string, std::string>> data;
 
-    /**
-     * Read the entire config file
-     * @param config_file The config file istream
-     * @return vector of lines
-    */
-    std::vector<std::string> read_from_config(std::ifstream &config_file)
-    {
-        std::vector<std::string> res;
-        std::string line;
-        while (std::getline(config_file, line))
+    public:
+        ConfigFile(fs::path path)
         {
-            res.push_back(line);
+            auto file = std::fstream(path, std::ios::in);
+            std::string line;
+            std::string section, key, value;
+            while (std::getline(file, line, '\n'))
+            {
+                if (line[0] == '[')
+                {
+                    // section started
+                    section = line.substr(1, line.length() - 2);
+                }
+                else if (line[0] == '\t')
+                {
+                    // key-value element
+                    key = line.substr(1, line.find(' ') - 1);
+                    value = line.substr(line.find('=') + 2);
+                    data[section][key] = value;
+                }
+            }
         }
-        return res;
-    }
-};
+    };
+} // namespace cparse
