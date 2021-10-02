@@ -35,6 +35,7 @@ namespace cparse
                     data[section][key] = value;
                 }
             }
+            file.close();
         }
     };
 } // namespace cparse
