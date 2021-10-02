@@ -49,4 +49,13 @@ namespace imperium
     */
     std::map<std::string, std::string> kv_parse(std::string data);
 
-}
+    /**
+     * Serialize key-value pairs. Used for serializing commits and tags.
+     * 
+     * @param kv map to be serialized
+     * @param order Order in which key-values need to appear, as it seems to matter in Git
+     * @return Serialized string
+    */
+    std::string kv_serialize(std::map<std::string, std::string> kv, std::vector<std::string> order);
+
+} // namespace imperium

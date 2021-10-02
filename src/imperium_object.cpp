@@ -73,6 +73,7 @@ std::string imperium::object_write(Impobject &obj, bool actually_write)
         fs::path path = repo_file(obj.repo, {"objects", folder_name, file_name}, actually_write);
         std::ofstream file(path, std::ios::out | std::ios::binary);
         file << compressed.str();
+        file.close();
         return sha;
     }
     return sha;
@@ -81,20 +82,41 @@ std::string imperium::object_write(Impobject &obj, bool actually_write)
 std::map<std::string, std::string> imperium::kv_parse(std::string data)
 {
     std::map<std::string, std::string> res;
-    std::set<std::string> valid_keys = {"tree", "parent", "author", "committer"};
     std::stringstream stream;
     stream << data;
     std::string line;
+    bool msg_started = false;
     while (std::getline(stream, line, '\n'))
     {
-        std::string key = line.substr(0, line.find(' '));
-        if (valid_keys.find(key) == valid_keys.end())
+        if (line == "" || msg_started)
         {
-            res["message"] = line;
+            res["message"] += line;
+            msg_started = true;
             continue;
         }
+        std::string key = line.substr(0, line.find(' '));
         std::string value = line.substr(line.find(' ') + 1);
         res[key] = value;
+    }
+    return res;
+}
+
+std::string imperium::kv_serialize(std::map<std::string, std::string> kv, std::vector<std::string> order)
+{
+    std::string res;
+    for (auto &i : order)
+    {
+        if (i == "message")
+        {
+            res += '\n';
+            res += kv[i];
+            res += "\n\n";
+            continue;
+        }
+        res += i;
+        res += " ";
+        res += kv[i];
+        res += '\n';
     }
     return res;
 }
