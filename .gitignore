@@ -6,4 +6,5 @@ lib/
 build/
 tests/
 include/boost
-test*.txt
+bin/*
+!bin/imperium

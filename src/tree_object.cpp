@@ -87,42 +87,37 @@ std::string Treeobject::serialize()
     return res;
 }
 
-TreeLeaf tree_from_directory(fs::path path)
+std::string Treeobject::construct_tree(std::vector<fs::path> paths)
 {
-    std::vector<TreeLeaf> entries;
-    auto repo = repo_find();
-    auto absolute_path = (path == ".") ? repo.worktree : repo.worktree / path;
-    for (auto &p : fs::directory_iterator(absolute_path))
-    {
-        if (fs::is_empty(p.path()) || (p == (repo.worktree / ".imperium")))
-            continue;
-        if (fs::is_directory(p.path()))
-        {
-            entries.push_back(tree_from_directory(p.path()));
-        }
-        else
-        {
-            auto rel_path = fs::relative(p.path().filename());
-            std::string sha = Blobobject::blob_from_file(p.path());
-            entries.push_back(TreeLeaf("100644", rel_path, sha));
-        }
-    }
-    auto tree = std::make_shared<Treeobject>(entries, repo, "");
-    std::string sha = object_write(*tree);
-    TreeLeaf res("100644", path, sha);
-    return res;
-}
-
-std::shared_ptr<Treeobject> Treeobject::construct_tree(std::vector<fs::path> paths)
-{
+    // @Todo: Currently this function starts constructing the tree directly from the paths provided.
+    // So that means if we commit file.txt like - commit folder1/folder2/file.txt
+    // then only one tree object will be created pointing directly to folder1/folder2/file.txt
+    // even though individual tree objects for folder1 and folder2 should be created first.
+    // So we need it to always start construction at root
     std::vector<TreeLeaf> entries;
     auto repo = repo_find();
     for (auto path : paths)
     {
-        auto absolute_path = repo.worktree / path;
+        auto absolute_path = (path == ".") ? repo.worktree : repo.worktree / path;
+        if (absolute_path == repo.impDir || fs::is_empty(absolute_path))
+            continue;
         if (fs::is_directory(absolute_path))
         {
-            entries.push_back(tree_from_directory(path));
+            for (auto &p : fs::directory_iterator(absolute_path))
+            {
+                if (fs::is_empty(p.path()) || (p == (repo.impDir)))
+                    continue;
+                if (fs::is_directory(p.path()))
+                {
+                    std::string sha = construct_tree({fs::relative(p.path(), repo.worktree)});
+                    entries.push_back(TreeLeaf("100644", fs::relative(p.path(), absolute_path), sha));
+                }
+                else
+                {
+                    std::string sha = Blobobject::blob_from_file(p);
+                    entries.push_back(TreeLeaf("100644", fs::relative(p.path(), absolute_path), sha));
+                }
+            }
         }
         else
         {
@@ -133,5 +128,6 @@ std::shared_ptr<Treeobject> Treeobject::construct_tree(std::vector<fs::path> pat
         }
     }
     auto tree = std::make_shared<Treeobject>(entries, repo, "");
-    return tree;
+    std::string sha = object_write(*tree);
+    return sha;
 }
