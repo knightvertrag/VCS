@@ -87,6 +87,32 @@ std::string Treeobject::serialize()
     return res;
 }
 
+TreeLeaf tree_from_directory(fs::path path)
+{
+    std::vector<TreeLeaf> entries;
+    auto repo = repo_find();
+    auto absolute_path = (path == ".") ? repo.worktree : repo.worktree / path;
+    for (auto &p : fs::directory_iterator(absolute_path))
+    {
+        if (fs::is_empty(p.path()) || (p == (repo.worktree / ".imperium")))
+            continue;
+        if (fs::is_directory(p.path()))
+        {
+            entries.push_back(tree_from_directory(p.path()));
+        }
+        else
+        {
+            auto rel_path = fs::relative(p.path().filename());
+            std::string sha = Blobobject::blob_from_file(p.path());
+            entries.push_back(TreeLeaf("100644", rel_path, sha));
+        }
+    }
+    auto tree = std::make_shared<Treeobject>(entries, repo, "");
+    std::string sha = object_write(*tree);
+    TreeLeaf res("100644", path, sha);
+    return res;
+}
+
 std::shared_ptr<Treeobject> Treeobject::construct_tree(std::vector<fs::path> paths)
 {
     std::vector<TreeLeaf> entries;
@@ -94,11 +120,9 @@ std::shared_ptr<Treeobject> Treeobject::construct_tree(std::vector<fs::path> pat
     for (auto path : paths)
     {
         auto absolute_path = repo.worktree / path;
-        if (absolute_path == (repo.worktree / ".imperium"))
-            continue;
         if (fs::is_directory(absolute_path))
         {
-            // @Todo: recursively contruct tree for this directory
+            entries.push_back(tree_from_directory(path));
         }
         else
         {

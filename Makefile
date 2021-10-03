@@ -24,3 +24,6 @@ tt:
 clean:
 	@echo "clean called"
 	@rm -rf -d $(BIN)/*
+
+clean-objects:
+	@rm -rf -d $(BIN)/.imperium/objects/*

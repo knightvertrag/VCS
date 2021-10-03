@@ -94,17 +94,17 @@ imperium::Repository imperium::repo_create(fs::path path)
     desc_file.close();
 
     std::ofstream head_file(repo_file(repo, {"HEAD"}));
-    head_file << "ref: refs/heads/master\n";
+    // head_file << "ref: refs/heads/master\n";
     head_file.close();
 
     std::ofstream config_file(repo_file(repo, {"config"}));
-    std::vector<std::string> config_lines{
-        "[core]\n",
-        "\trepositoryformatversion = 2\n",
-        "\tfilemode = false\n",
-        "\tbare = false\n",
-    };
-    //Configparser::initialize_config(config_file, config_lines);
+    // std::vector<std::string> config_lines{
+    //     "[core]\n",
+    //     "\trepositoryformatversion = 2\n",
+    //     "\tfilemode = false\n",
+    //     "\tbare = false\n",
+    // };
+    // Configparser::initialize_config(config_file, config_lines);
     config_file.close();
 
     return repo;
