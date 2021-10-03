@@ -56,8 +56,7 @@ Commitobject::Commitobject(std::string message) : Impobject(repo_find(), "", "co
     std::string email = config_file.data["user"]["email"];
     auto p1 = std::chrono::system_clock::now();
     auto time_stamp = std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count(); // @Todo: Add the timezone offset
-    auto tree = Treeobject::construct_tree({"."});                                                     // When INDEX is added this will be dynamic
-    std::string tree_id = object_write(*tree);
+    std::string tree_id = Treeobject::construct_tree({"folder1/folder1_2/file4.py"});                  // When INDEX is added this will be dynamic
     this->author = author + " " + "<" + email + ">" + " " + std::to_string(time_stamp);
     this->committer = author + " " + "<" + email + ">" + " " + std::to_string(time_stamp);
     this->tree = tree_id;

@@ -30,8 +30,8 @@ namespace imperium
          * Paths taken from the cli to construct tree object
          * 
          * @param paths vector of paths - files and directories
-         * @return shared pointer of constructed tree object
+         * @return sha of constructed tree object
         */
-        static std::shared_ptr<Treeobject> construct_tree(std::vector<fs::path> paths);
+        static std::string construct_tree(std::vector<fs::path> paths);
     };
 } // namespace imperium
