@@ -2,6 +2,7 @@
 #include "tree_object.h"
 #include "imperium_object.h"
 #include "configParser.h"
+#include "refs.h"
 
 #include <fstream>
 #include <chrono>
@@ -56,19 +57,22 @@ Commitobject::Commitobject(std::string message) : Impobject(repo_find(), "", "co
     std::string email = config_file.data["user"]["email"];
     auto p1 = std::chrono::system_clock::now();
     auto time_stamp = std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count(); // @Todo: Add the timezone offset
-    std::string tree_id = Treeobject::construct_tree({"folder1/folder1_2/file4.py"});                  // When INDEX is added this will be dynamic
+    std::string tree_id = Treeobject::construct_tree({"."});                                           // When INDEX is added this will be dynamic
     this->author = author + " " + "<" + email + ">" + " " + std::to_string(time_stamp);
     this->committer = author + " " + "<" + email + ">" + " " + std::to_string(time_stamp);
     this->tree = tree_id;
-    std::ifstream HEAD_in((repo.worktree / ".imperium" / "HEAD"), std::ios::in);
-    std::string line;
-    while (std::getline(HEAD_in, line))
-    {
-        this->parent = line;
-    }
-    HEAD_in.close();
-    std::ofstream HEAD_out((repo.worktree / ".imperium" / "HEAD"), std::ios::trunc);
-    HEAD_out << tree_id;
-    HEAD_out.close();
+    // std::ifstream HEAD_in((repo.worktree / ".imperium" / "HEAD"), std::ios::in);
+    // std::string line;
+    // while (std::getline(HEAD_in, line))
+    // {
+    //     this->parent = line;
+    // }
+    // HEAD_in.close();
+    // std::ofstream HEAD_out((repo.worktree / ".imperium" / "HEAD"), std::ios::trunc);
+    // HEAD_out << tree_id;
+    // HEAD_out.close();
+    auto refs = Refs(repo.impDir);
+    this->parent = refs.read_head();
+    refs.update_head(tree_id);
     this->message = message;
 }
