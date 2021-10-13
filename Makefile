@@ -16,7 +16,7 @@ run: clean all
 	./$(BIN)/$(EXECUTABLE)
 
 $(BIN)/$(EXECUTABLE): $(SRC)/*.cpp $(SRC)/*.h $(SRC)/cli/*.h
-	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) -I ./src -L $(LIB) $(SRC)/main.cpp  $(SRC)/repository.cpp  $(SRC)/imperium_object.cpp $(SRC)/blob_object.cpp $(SRC)/tree_object.cpp $(SRC)/commit_object.cpp $(SRC)/refs.cpp -o $(BIN)/$(EXECUTABLE) $(LIBRARIES)
+	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) -I ./src -L $(LIB) $(SRC)/main.cpp  $(SRC)/repository.cpp  $(SRC)/imperium_object.cpp $(SRC)/blob_object.cpp $(SRC)/tree_object.cpp $(SRC)/commit_object.cpp $(SRC)/refs.cpp $(SRC)/lockfile.cpp -o $(BIN)/$(EXECUTABLE) $(LIBRARIES)
 
 tt:
 	$(CXX) $(CXX_FLAGS) -I $(INCLUDE)  -L $(LIB) ./tests/test.cpp -o $ ./tests/test $(LIBRARIES) 
