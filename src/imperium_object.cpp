@@ -61,7 +61,7 @@ std::string imperium::object_write(Impobject &obj, bool actually_write)
     std::string sha = boost::compute::detail::sha1(result);
     std::string folder_name = sha.substr(0, 2);
     std::string file_name = sha.substr(2);
-    if (actually_write || (fs::exists(fs::path(folder_name) / fs::path(file_name))))
+    if (actually_write || (fs::exists(obj.repo.impDir / fs::path("objects") / fs::path(folder_name) / fs::path(file_name))))
     {
         std::stringstream compressed;
         std::stringstream decompressed;
