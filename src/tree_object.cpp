@@ -5,31 +5,43 @@
 
 #include <filesystem>
 #include <memory>
-#include <boost/algorithm/hex.hpp>
 #include <map>
+#include <variant>
+#include <boost/algorithm/hex.hpp>
 
 using namespace imperium;
 namespace fs = std::filesystem;
 
 /**
+ * Get the mode for path. However only 100644 and 100755 are allowed by Git for files, and 40000 for directories.
+ * @return mode reduced to the ones allowed
+ */
+std::string file_mode(fs::path path)
+{
+    auto perms = fs::status(path).permissions();
+    if (fs::is_directory(path))
+        return "40000";
+    if ((perms & fs::perms::owner_exec) != fs::perms::none)
+        return "100755";
+    else
+        return "100644";
+}
+
+/**
  * Parse one entry in the tree object. Since entries do not have delimiters we parse one entry and return the starting index of the next one.
- * 
+ *
  * @param raw entire tree data
  * @param start starting index of the current entry
  * @return constructed TreeLeaf and starting index of next entry
-*/
+ */
 std::pair<uint32_t, TreeLeaf> parse_one(std::string &raw, uint32_t start)
 {
     /**
      * Each entry looks like => <mode> <relative path>\0<sha>
-    */
+     */
     uint32_t space_pos = raw.find(' ', start);
     uint32_t null_pos = raw.find('\0', space_pos);
     std::string mode = raw.substr(start, space_pos - start);
-    if (mode.length() < 6)
-    {
-        mode = "0" + mode;
-    }
     fs::path path = raw.substr(space_pos + 1, null_pos - space_pos);
     std::string sha = boost::algorithm::hex_lower(raw.substr(null_pos + 1, 20));
     return {null_pos + 21, TreeLeaf(mode, path, sha)};
@@ -51,12 +63,13 @@ std::vector<TreeLeaf> parse_tree(std::string raw)
 
 void Treeobject::pretty_print()
 {
-    for (auto &i : items)
+    for (auto &i : _items)
     {
         // find the object with the current i.sha to get type
         auto repo = repo_find();
         auto obj = object_read(repo, i.sha);
-        std::cout << i.mode << " " << obj->type << " " << i.sha << "\t" << i.path.generic_string() << "\n";
+        std::cout << ((i.mode.length() < 6) ? ("0" + i.mode) : i.mode);
+        std::cout << " " << obj->type << " " << i.sha << "\t" << i.path.generic_string() << "\n";
         delete obj;
     }
 }
@@ -69,17 +82,17 @@ Treeobject::Treeobject(Repository repo, std::string data) : Impobject(repo, data
 void Treeobject::deserialize(std::string data)
 {
     data = data.substr(data.find('\0') + 1);
-    this->items = parse_tree(data);
+    this->_items = parse_tree(data);
 }
 
 std::string Treeobject::serialize()
 {
     std::string res;
-    for (auto item : items)
+    for (auto item : _items)
     {
         res += item.mode;
         res += " ";
-        res += item.path;
+        res += item.path.filename();
         res += '\0';
         res += boost::algorithm::unhex(item.sha);
     }
@@ -87,47 +100,117 @@ std::string Treeobject::serialize()
     return res;
 }
 
-std::string Treeobject::construct_tree(std::vector<fs::path> paths)
+/**
+ * @return vector of all parent directories of path in descending order
+ */
+std::vector<fs::path> parent_dirs(fs::path path)
 {
-    // @Todo: Currently this function starts constructing the tree directly from the paths provided.
-    // So that means if we commit file.txt like - commit folder1/folder2/file.txt
-    // then only one tree object will be created pointing directly to folder1/folder2/file.txt
-    // even though individual tree objects for folder1 and folder2 should be created first.
-    // So we need it to always start construction at root
-    std::vector<TreeLeaf> entries;
     auto repo = repo_find();
-    for (auto path : paths)
+    std::vector<fs::path> res;
+    while (path != repo.worktree)
     {
-        auto absolute_path = (path == ".") ? repo.worktree : repo.worktree / path;
-        if (absolute_path == repo.impDir || fs::is_empty(absolute_path))
-            continue;
-        if (fs::is_directory(absolute_path))
+        path = path.parent_path();
+        if (path != repo.worktree)
+            res.push_back(fs::relative(path, repo.worktree));
+    }
+    return res;
+}
+
+void Treeobject::add_entry(std::vector<fs::path> parents, TreeLeaf item)
+{
+    auto repo = repo_find();
+    item.path = fs::relative(item.path, repo.worktree);
+    if (parents.empty())
+        _entries[item.path.generic_string()] = item;
+    else
+    {
+        auto b_parents = parents;
+        if (_entries.find(parents.back()) == _entries.end())
         {
-            for (auto &p : fs::directory_iterator(absolute_path))
-            {
-                if (fs::is_empty(p.path()) || (p == (repo.impDir)))
-                    continue;
-                if (fs::is_directory(p.path()))
-                {
-                    std::string sha = construct_tree({fs::relative(p.path(), repo.worktree)});
-                    entries.push_back(TreeLeaf("100644", fs::relative(p.path(), absolute_path), sha));
-                }
-                else
-                {
-                    std::string sha = Blobobject::blob_from_file(p);
-                    entries.push_back(TreeLeaf("100644", fs::relative(p.path(), absolute_path), sha));
-                }
-            }
+            auto tree = new Treeobject();
+            parents.pop_back();
+            tree->add_entry(parents, item);
+            _entries[b_parents.back().string()] = *tree;
+            delete tree;
         }
         else
         {
-            // Create blobs from content
-            std::string sha = Blobobject::blob_from_file(absolute_path);
-            // @Todo: mode should be dynamic
-            entries.push_back(TreeLeaf("100644", path, sha));
+            auto tree = std::get<1>(_entries[parents.back()]);
+            parents.pop_back();
+            tree.add_entry(parents, item);
+            _entries[b_parents.back().string()] = tree;
         }
     }
-    auto tree = std::make_shared<Treeobject>(entries, repo, "");
-    std::string sha = object_write(*tree);
+}
+
+std::string Treeobject::traverse()
+{
+    auto repo = repo_find();
+    for (auto &e : _entries)
+    {
+        if (e.second.index() == 1)
+        {
+            auto tree = std::get<1>(e.second);
+            auto sha = tree.traverse();
+            _items.push_back(TreeLeaf("40000", e.first, sha));
+        }
+        else
+        {
+            auto leaf = std::get<0>(e.second);
+            _items.push_back(leaf);
+        }
+    }
+    auto tree = std::make_shared<Treeobject>(_items, repo, "");
+    auto sha = object_write(*tree);
+    return sha;
+}
+
+Treeobject *Treeobject::build(std::vector<TreeLeaf> __entries)
+{
+    auto root = new Treeobject();
+    for (auto e : __entries)
+    {
+        root->add_entry(parent_dirs(e.path), e);
+    }
+    return root;
+}
+
+std::string Treeobject::construct_tree(std::vector<fs::path> paths)
+{
+    auto repo = repo_find();
+    if (paths[0] == ".")
+    {
+        paths[0] = repo.worktree;
+    }
+    std::vector<TreeLeaf> entries;
+    for (auto path : paths)
+    {
+        if (fs::is_regular_file(repo.worktree / path))
+        {
+            path = repo.worktree / path;
+            std::string sha = Blobobject::blob_from_file(path);
+            entries.push_back(TreeLeaf(file_mode(path), path, sha));
+        }
+        else
+        {
+            for (auto p = fs::recursive_directory_iterator(path);
+                 p != fs::recursive_directory_iterator();
+                 p++)
+            {
+                if (fs::is_regular_file(p->path()))
+                {
+                    std::string sha = Blobobject::blob_from_file(p->path());
+                    entries.push_back(TreeLeaf(file_mode(p->path()), p->path(), sha));
+                }
+                if (p->path() == repo.impDir)
+                {
+                    p.disable_recursion_pending();
+                }
+            }
+        }
+    }
+    auto root = Treeobject::build(entries);
+    std::string sha = root->traverse();
+    delete root;
     return sha;
 }
