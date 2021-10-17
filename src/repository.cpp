@@ -47,48 +47,54 @@ fs::path imperium::repo_dir(Repository &repo, std::vector<fs::path> paths, bool 
         fs::create_directories(path);
         return path;
     }
+    else
+    {
+        std::cerr << "Bad call to repo_dir()";
+        exit(-1);
+    }
 }
 
 fs::path imperium::repo_file(Repository &repo, std::vector<fs::path> paths, bool mkdir)
 {
     std::string filename = paths.back();
-    //get rid of filename
+    // get rid of filename
     paths.pop_back();
-    try
-    {
-        //get directory path to file
-        fs::path path = repo_dir(repo, paths, mkdir);
-        //append file
-        return path / filename;
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << '\n';
-    }
+
+    // get directory path to file
+    fs::path path = repo_dir(repo, paths, mkdir);
+    // append file
+    return path / filename;
 }
 
 imperium::Repository imperium::repo_create(fs::path path)
 {
     Repository repo = Repository(path, true);
 
-    //Make sure the path either doesn't exist or is an empty directory
+    // Make sure the path either doesn't exist or is an empty directory
     if (fs::exists(repo.impDir))
     {
         if (!fs::is_directory(repo.impDir))
-            throw path.generic_string() + "is not a directory";
+        {
+            std::cerr << path.generic_string() + "is not a directory";
+            exit(-1);
+        }
+
         if (!fs::is_empty(repo.impDir))
-            throw path.generic_string() + "is not empty";
+        {
+            std::cerr << path.generic_string() + "is not empty";
+            exit(-1);
+        }
     }
     else
         fs::create_directories(repo.worktree);
 
-    //make all the subdirectories and files under .imperium
+    // make all the subdirectories and files under .imperium
     repo_dir(repo, {"branches"}, true);
     repo_dir(repo, {"objects"}, true);
     repo_dir(repo, {"refs", "tags"}, true);
     repo_dir(repo, {"refs", "heads"}, true);
 
-    //fill in the default info inside files
+    // fill in the default info inside files
     std::ofstream desc_file(repo_file(repo, {"description"}));
     desc_file << "Unnamed repository; edit this file 'description' to name the repository.\n";
     desc_file.close();
