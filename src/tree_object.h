@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <vector>
 #include <map>
+#include <ordered_map.h>
 #include <variant>
 
 namespace fs = std::filesystem;
@@ -20,7 +21,7 @@ namespace imperium
         fs::path path;
         std::string sha;
 
-        TreeLeaf(){};
+        TreeLeaf() = default;
         TreeLeaf(std::string mode, fs::path path, std::string sha) : mode(mode), path(path), sha(sha){};
     };
 
@@ -28,7 +29,7 @@ namespace imperium
     {
     private:
         std::vector<TreeLeaf> _items;
-        std::map<std::string, std::variant<TreeLeaf, Treeobject>> _entries;
+        vertrag::ordered_map<std::string, std::variant<TreeLeaf, Treeobject>> _entries;
 
     public:
         Treeobject() : Impobject(repo_find(), "", "tree"){};
