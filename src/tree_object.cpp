@@ -3,9 +3,11 @@
 #include "blob_object.h"
 #include "repository.h"
 
+#include <stddef.h>
 #include <filesystem>
 #include <memory>
 #include <map>
+#include <ordered_map.h>
 #include <variant>
 #include <boost/algorithm/hex.hpp>
 
@@ -39,8 +41,8 @@ std::pair<uint32_t, TreeLeaf> parse_one(std::string &raw, uint32_t start)
     /**
      * Each entry looks like => <mode> <relative path>\0<sha>
      */
-    uint32_t space_pos = raw.find(' ', start);
-    uint32_t null_pos = raw.find('\0', space_pos);
+    size_t space_pos = raw.find(' ', start);
+    size_t null_pos = raw.find('\0', space_pos);
     std::string mode = raw.substr(start, space_pos - start);
     fs::path path = raw.substr(space_pos + 1, null_pos - space_pos);
     std::string sha = boost::algorithm::hex_lower(raw.substr(null_pos + 1, 20));
@@ -125,12 +127,12 @@ void Treeobject::add_entry(std::vector<fs::path> parents, TreeLeaf item)
     else
     {
         auto b_parents = parents;
-        if (_entries.find(parents.back()) == _entries.end())
+        if (!_entries.find(parents.back()))
         {
             auto tree = new Treeobject();
             parents.pop_back();
             tree->add_entry(parents, item);
-            _entries[b_parents.back().string()] = *tree;
+            _entries[b_parents.back().generic_string()] = *tree;
             delete tree;
         }
         else
@@ -138,7 +140,7 @@ void Treeobject::add_entry(std::vector<fs::path> parents, TreeLeaf item)
             auto tree = std::get<1>(_entries[parents.back()]);
             parents.pop_back();
             tree.add_entry(parents, item);
-            _entries[b_parents.back().string()] = tree;
+            _entries[b_parents.back().generic_string()] = tree;
         }
     }
 }
@@ -148,15 +150,15 @@ std::string Treeobject::traverse()
     auto repo = repo_find();
     for (auto &e : _entries)
     {
-        if (e.second.index() == 1)
+        if (e.second().index() == 1)
         {
-            auto tree = std::get<1>(e.second);
+            auto tree = std::get<1>(e.second());
             auto sha = tree.traverse();
-            _items.push_back(TreeLeaf("40000", e.first, sha));
+            _items.push_back(TreeLeaf("40000", e.first(), sha));
         }
         else
         {
-            auto leaf = std::get<0>(e.second);
+            auto leaf = std::get<0>(e.second());
             _items.push_back(leaf);
         }
     }
@@ -167,6 +169,11 @@ std::string Treeobject::traverse()
 
 Treeobject *Treeobject::build(std::vector<TreeLeaf> __entries)
 {
+    auto sorter = [](TreeLeaf &a, TreeLeaf &b)
+    {
+        return a.path.generic_string() < b.path.generic_string();
+    };
+    std::sort(__entries.begin(), __entries.end(), sorter);
     auto root = new Treeobject();
     for (auto e : __entries)
     {
