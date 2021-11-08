@@ -72,7 +72,10 @@ std::string imperium::object_write(Impobject &obj, bool actually_write)
         boost::iostreams::copy(out, compressed);
         fs::path path = repo_file(obj.repo, {"objects", folder_name, file_name}, actually_write);
         std::ofstream file(path, std::ios::out | std::ios::binary);
-        file << compressed.str();
+        // file << compressed.str();
+        std::copy(std::istreambuf_iterator<char>(compressed),
+                  std::istreambuf_iterator<char>(),
+                  std::ostreambuf_iterator<char>(file));
         file.close();
         return sha;
     }

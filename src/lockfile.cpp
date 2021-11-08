@@ -53,7 +53,7 @@ void LockFile::raise_on_stale_lock()
     }
 }
 
-void LockFile::write_lock(std::string s)
+void LockFile::write_lock(const std::string &s)
 {
     raise_on_stale_lock();
     int buf_size = s.size();
