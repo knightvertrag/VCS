@@ -15,11 +15,11 @@ run: clean all
 	@echo "run called"
 	./$(BIN)/$(EXECUTABLE)
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp $(SRC)/*.h $(SRC)/cli/*.h
-	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) -I ./src -L $(LIB) $(SRC)/main.cpp  $(SRC)/repository.cpp  $(SRC)/imperium_object.cpp $(SRC)/blob_object.cpp $(SRC)/tree_object.cpp $(SRC)/commit_object.cpp $(SRC)/refs.cpp $(SRC)/lockfile.cpp -o $(BIN)/$(EXECUTABLE) $(LIBRARIES)
+$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp $(SRC)/*.h $(SRC)/cli/*.h ./include/ordered_map.h
+	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) -I ./src -L $(LIB) $(SRC)/main.cpp  $(SRC)/repository.cpp  $(SRC)/imperium_object.cpp $(SRC)/blob_object.cpp $(SRC)/tree_object.cpp $(SRC)/commit_object.cpp $(SRC)/refs.cpp $(SRC)/lockfile.cpp $(SRC)/index.cpp -o $(BIN)/$(EXECUTABLE) $(LIBRARIES)
 
-tt:
-	$(CXX) $(CXX_FLAGS) -I $(INCLUDE)  -L $(LIB) ./tests/test.cpp -o $ ./tests/test $(LIBRARIES) 
+tt: 
+	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) -L $(LIB) ./tests/test.cpp -o ./tests/test $(LIBRARIES) 
 
 clean:
 	@echo "clean called"

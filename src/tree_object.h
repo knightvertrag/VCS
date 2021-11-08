@@ -23,6 +23,10 @@ namespace imperium
 
         TreeLeaf() = default;
         TreeLeaf(std::string mode, fs::path path, std::string sha) : mode(mode), path(path), sha(sha){};
+        TreeLeaf(TreeLeaf &&__other) = default;
+        TreeLeaf &operator=(TreeLeaf &&__other) = default;
+        TreeLeaf(const TreeLeaf &__other) = default;
+        TreeLeaf &operator=(const TreeLeaf &__other) = default;
     };
 
     class Treeobject : public Impobject
@@ -45,7 +49,7 @@ namespace imperium
          * @param parents vector of paths representing the current parents of item
          * @param item TreeLeaf to be inserted to this object
          */
-        void add_entry(std::vector<fs::path> parents, TreeLeaf item);
+        void add_entry(std::vector<fs::path> &parents, TreeLeaf &item);
 
         /**
          * Recursively traverse through current Treeobject while writing nested trees to filesystem
@@ -60,7 +64,7 @@ namespace imperium
          * @param __entries vector of TreeLeaf containing all paths to build root tree with
          * @return root tree object
          */
-        static Treeobject *build(std::vector<TreeLeaf> __entries);
+        static Treeobject *build(std::vector<TreeLeaf> &__entries);
         /**
          * This is just a convenience method for testing commits, will be removed when INDEX is added
          */

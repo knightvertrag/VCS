@@ -9,6 +9,7 @@
 #include <map>
 #include <ordered_map.h>
 #include <variant>
+#include <utility>
 #include <boost/algorithm/hex.hpp>
 
 using namespace imperium;
@@ -118,7 +119,7 @@ std::vector<fs::path> parent_dirs(fs::path path)
     return res;
 }
 
-void Treeobject::add_entry(std::vector<fs::path> parents, TreeLeaf item)
+void Treeobject::add_entry(std::vector<fs::path> &parents, TreeLeaf &item)
 {
     auto repo = repo_find();
     item.path = fs::relative(item.path, repo.worktree);
@@ -167,7 +168,7 @@ std::string Treeobject::traverse()
     return sha;
 }
 
-Treeobject *Treeobject::build(std::vector<TreeLeaf> __entries)
+Treeobject *Treeobject::build(std::vector<TreeLeaf> &__entries)
 {
     auto sorter = [](TreeLeaf &a, TreeLeaf &b)
     {
@@ -177,7 +178,8 @@ Treeobject *Treeobject::build(std::vector<TreeLeaf> __entries)
     auto root = new Treeobject();
     for (auto e : __entries)
     {
-        root->add_entry(parent_dirs(e.path), e);
+        auto pdirs = parent_dirs(e.path);
+        root->add_entry(pdirs, e);
     }
     return root;
 }
