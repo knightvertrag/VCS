@@ -31,7 +31,7 @@ namespace imperium
         }
         else if (op.s)
         {
-            std::cout << obj->data.substr(obj->data.find(" "), obj->data.find('\0') - obj->data.find(" "));
+            std::cout << obj->data.substr(obj->data.find(" ") + 1, obj->data.find('\0') - obj->data.find(" ")) << "\n";
             return;
         }
         delete obj;
