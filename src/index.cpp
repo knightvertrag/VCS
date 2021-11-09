@@ -87,9 +87,7 @@ void write_int_item(int __prop, std::ostringstream &__stream)
     __stream.write(ptr, sizeof(int));
 }
 
-void write_flags(
-    Index::Entry::Flags &__flags,
-    std::ostringstream &__stream)
+void write_flags(Index::Entry::Flags &__flags, std::ostringstream &__stream)
 {
     if (__flags.file_name_length > 0xfff)
         __flags.file_name_length = 0xfff;
@@ -111,7 +109,6 @@ void write_flags(
 void write_file_name(const std::string &__file_name, std::ostringstream &__stream)
 {
     char padding[8];
-    // std::cout << (__stream.str().size() + __file_name.size());
     int padding_num = 8 - ((__stream.str().size() + __file_name.size() - 12) % 8);
 
     for (size_t i = 0; i < padding_num; i++)
@@ -124,9 +121,21 @@ void write_file_name(const std::string &__file_name, std::ostringstream &__strea
     __stream.write(padding, padding_num);
 }
 
+void write_entry_sha(const std::string &__sha, std::ostringstream &__stream)
+{
+    auto oid = boost::algorithm::unhex(__sha);
+    __stream.write(oid.c_str(), 20);
+}
+
+void write_index_sha(std::ostringstream &__stream)
+{
+    std::string index_sha = boost::compute::detail::sha1(__stream.str());
+    auto index_sha_bytes = boost::algorithm::unhex(index_sha);
+    __stream.write(index_sha_bytes.c_str(), 20);
+}
+
 namespace imperium
 {
-    // @Todo: write flags, entry file pathname, index hash
     std::ostringstream &operator<<(std::ostringstream &__stream, Index::Entry &__entry)
     {
         write_int_item(__entry._stat.st_ctim.tv_sec, __stream);
@@ -139,13 +148,9 @@ namespace imperium
         write_int_item(__entry._stat.st_uid, __stream);
         write_int_item(__entry._stat.st_gid, __stream);
         write_int_item(__entry._stat.st_size, __stream);
-        auto oid = boost::algorithm::unhex(__entry._sha);
-        __stream.write(oid.c_str(), oid.size());
+        write_entry_sha(__entry._sha, __stream);
         write_flags(__entry._flags, __stream);
         write_file_name(__entry._path.generic_string(), __stream);
-        std::string index_sha = boost::compute::detail::sha1(__stream.str());
-        auto index_sha_bytes = boost::algorithm::unhex(index_sha).c_str();
-        __stream.write(index_sha_bytes, 20);
         return __stream;
     }
 }
@@ -164,6 +169,7 @@ bool Index::write_updates()
     {
         header << entry;
     }
+    write_index_sha(header);
     this->write(header.str());
     return true;
 }
