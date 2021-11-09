@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <boost/algorithm/hex.hpp>
+#include <boost/compute/detail/sha1.hpp>
 
 #include <sys/stat.h>
 
@@ -45,6 +46,27 @@ void Index::add(fs::path &__path, std::string &__sha)
     m_entries[entry._path.generic_string()] = entry;
 }
 
+Index::Entry::Entry(const Entry &__other)
+{
+    _path = __other._path;
+    _sha = __other._sha;
+    _stat = __other._stat;
+    _flags.assume_valid = __other._flags.assume_valid;
+    _flags.file_name_length = __other._flags.file_name_length;
+    _flags.stage = __other._flags.stage;
+}
+
+Index::Entry &Index::Entry::operator=(const Entry &__other)
+{
+    _path = __other._path;
+    _sha = __other._sha;
+    _stat = __other._stat;
+    _flags.assume_valid = __other._flags.assume_valid;
+    _flags.file_name_length = __other._flags.file_name_length;
+    _flags.stage = __other._flags.stage;
+    return *this;
+}
+
 Index::Entry::Entry(fs::path &__path, std::string &__sha) : _path(__path), _sha(__sha)
 {
     stat(__path.c_str(), &_stat);
@@ -52,7 +74,9 @@ Index::Entry::Entry(fs::path &__path, std::string &__sha) : _path(__path), _sha(
         _stat.st_mode = Index::EXECUTABLE_MODE;
     if (_stat.st_mode & S_IFREG)
         _stat.st_mode = Index::REGULAR_MODE;
-    _flags = std::min(MAX_PATH_SIZE, __path.generic_string().size());
+    _flags.assume_valid = 0;
+    _flags.stage = 0;
+    _flags.file_name_length = std::min(MAX_PATH_SIZE, __path.generic_string().size());
 }
 
 void write_int_item(int __prop, std::ostringstream &__stream)
@@ -61,6 +85,43 @@ void write_int_item(int __prop, std::ostringstream &__stream)
         swap_endian(__prop);
     auto ptr = reinterpret_cast<char *>(&__prop);
     __stream.write(ptr, sizeof(int));
+}
+
+void write_flags(
+    Index::Entry::Flags &__flags,
+    std::ostringstream &__stream)
+{
+    if (__flags.file_name_length > 0xfff)
+        __flags.file_name_length = 0xfff;
+    int file_length = __flags.file_name_length;
+    int assume_valid = __flags.assume_valid;
+    int extended = __flags.extended;
+    int stage = __flags.stage;
+    int flags;
+    stage <<= 12;
+    extended <<= 14;
+    assume_valid <<= 15;
+    flags = file_length | assume_valid | extended | stage;
+    if (!is_big_endian())
+        swap_endian(flags);
+    auto bytes = reinterpret_cast<char *>(&flags);
+    __stream.write((bytes + 2), 2);
+}
+
+void write_file_name(const std::string &__file_name, std::ostringstream &__stream)
+{
+    char padding[8];
+    // std::cout << (__stream.str().size() + __file_name.size());
+    int padding_num = 8 - ((__stream.str().size() + __file_name.size() - 12) % 8);
+
+    for (size_t i = 0; i < padding_num; i++)
+    {
+        padding[i] = 0;
+    }
+
+    auto name_ptr = __file_name.c_str();
+    __stream.write(name_ptr, __file_name.size());
+    __stream.write(padding, padding_num);
 }
 
 namespace imperium
@@ -80,6 +141,11 @@ namespace imperium
         write_int_item(__entry._stat.st_size, __stream);
         auto oid = boost::algorithm::unhex(__entry._sha);
         __stream.write(oid.c_str(), oid.size());
+        write_flags(__entry._flags, __stream);
+        write_file_name(__entry._path.generic_string(), __stream);
+        std::string index_sha = boost::compute::detail::sha1(__stream.str());
+        auto index_sha_bytes = boost::algorithm::unhex(index_sha).c_str();
+        __stream.write(index_sha_bytes, 20);
         return __stream;
     }
 }

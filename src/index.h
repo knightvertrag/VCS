@@ -22,7 +22,7 @@ namespace imperium
         class Entry;
         Index() = default;
 
-        Index(fs::path __path) : m_lock_file(__path) {}
+        Index(fs::path __lock_path) : m_lock_file(__lock_path) {}
 
         Index(const Index &__other) = default;
         Index &operator=(const Index &__other) = default;
@@ -64,10 +64,18 @@ namespace imperium
     public:
         fs::path _path;
         std::string _sha;
-        int _flags;
+        struct Flags
+        {
+            int file_name_length;
+            int assume_valid;
+            const int extended = 0; // must be 0 for ver 2
+            int stage;
+        } _flags;
         struct stat _stat;
 
         Entry() = default;
+        Entry(const Entry &__other);
+        Entry &operator=(const Entry &__other);
         Entry(fs::path &__path, std::string &__sha);
 
         friend std::ostringstream &operator<<(std::ostringstream &__stream, Index::Entry &__entry);
