@@ -1,5 +1,6 @@
 #include "index.h"
 #include "lockfile.h"
+#include "repository.h"
 
 #include <iostream>
 #include <map>
@@ -40,7 +41,7 @@ int &swap_endian(int &x)
     return x;
 }
 
-void Index::add(fs::path &__path, std::string &__sha)
+void Index::add(const fs::path &__path, std::string &__sha)
 {
     Index::Entry entry{__path, __sha};
     m_entries[entry._path.generic_string()] = entry;
@@ -67,9 +68,11 @@ Index::Entry &Index::Entry::operator=(const Entry &__other)
     return *this;
 }
 
-Index::Entry::Entry(fs::path &__path, std::string &__sha) : _path(__path), _sha(__sha)
+Index::Entry::Entry(const fs::path &__path, std::string &__sha) : _path(__path), _sha(__sha)
 {
-    stat(__path.c_str(), &_stat);
+    Repository repo = repo_find();
+    fs::path absolute_path = repo.worktree / __path;
+    stat(absolute_path.c_str(), &_stat);
     if (_stat.st_mode & S_IEXEC)
         _stat.st_mode = Index::EXECUTABLE_MODE;
     if (_stat.st_mode & S_IFREG)

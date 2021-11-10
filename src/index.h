@@ -30,9 +30,13 @@ namespace imperium
         Index(Index &&__other) = default;
         Index &operator=(Index &&__other) = default;
 
-        void add(fs::path &__path, std::string &__sha);
+        // Add an entry to m_entries
+        void add(const fs::path &__path, std::string &__sha);
+        // Serialize entries by writing to a stingstream
         bool write_updates();
+        // Write stringstream contents to lockfile
         void write(const std::string &data);
+        // commit changes to lockfile
         void end_write();
 
     private:
@@ -76,7 +80,7 @@ namespace imperium
         Entry() = default;
         Entry(const Entry &__other);
         Entry &operator=(const Entry &__other);
-        Entry(fs::path &__path, std::string &__sha);
+        Entry(const fs::path &__path, std::string &__sha);
 
         friend std::ostringstream &operator<<(std::ostringstream &__stream, Index::Entry &__entry);
     };
