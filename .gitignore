@@ -7,5 +7,4 @@ build/
 tests/
 include/boost
 bin/*
-!bin/imperium
 install.sh

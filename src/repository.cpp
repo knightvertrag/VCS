@@ -75,13 +75,13 @@ imperium::Repository imperium::repo_create(fs::path path)
     {
         if (!fs::is_directory(repo.impDir))
         {
-            std::cerr << path.generic_string() + "is not a directory";
+            std::cerr << repo.impDir.generic_string() + " is not a directory\n";
             exit(-1);
         }
 
         if (!fs::is_empty(repo.impDir))
         {
-            std::cerr << path.generic_string() + "is not empty";
+            std::cerr << repo.impDir.generic_string() + " is not empty\n";
             exit(-1);
         }
     }

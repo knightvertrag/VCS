@@ -14,7 +14,7 @@ namespace imperium
     inline void runInit(InitOptions const &op)
     {
         auto repo = imperium::repo_create(op.path);
-        std::cout << "Initializing Imperium Repository at " << repo.impDir.generic_string() << "\n";
+        std::cout << "Initialized empty Imperium Repository at " << repo.impDir.generic_string() << "\n";
     }
     inline void setupInit(CLI::App &app)
     {
