@@ -30,6 +30,8 @@ namespace imperium
         Index(Index &&__other) = default;
         Index &operator=(Index &&__other) = default;
 
+        /*****************Serializers*****************/
+
         // Add an entry to m_entries
         void add(const fs::path &__path, std::string &__sha);
         // Serialize entries by writing to a stingstream
@@ -38,6 +40,11 @@ namespace imperium
         void write(const std::string &data);
         // commit changes to lockfile
         void end_write();
+
+        /*****************deserializers****************/
+        void load_for_update();
+        // read the index file
+        void read_index();
 
     private:
         // map entries to their paths
@@ -66,13 +73,14 @@ namespace imperium
     class Index::Entry
     {
     public:
+        // path relative to repo.worktree
         fs::path _path;
         std::string _sha;
         struct Flags
         {
             int file_name_length;
             int assume_valid;
-            const int extended = 0; // must be 0 for ver 2
+            const int extended = 0; // must be 0 for version 2, which we are using
             int stage;
         } _flags;
         struct stat _stat;
@@ -82,6 +90,10 @@ namespace imperium
         Entry &operator=(const Entry &__other);
         Entry(const fs::path &__path, std::string &__sha);
 
+        // Serialize and put the __entry in __stream
         friend std::ostringstream &operator<<(std::ostringstream &__stream, Index::Entry &__entry);
+
+        // Deserialize __stream and use it to fill up __entry
+        friend void operator>>(std::ifstream &__stream, Index::Entry &__entry);
     };
 } // namespace imperium

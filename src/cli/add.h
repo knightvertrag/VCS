@@ -20,6 +20,7 @@ namespace imperium
     {
         Repository repo = repo_find();
         imperium::Index index(repo.impDir / "index");
+        index.load_for_update();
         for (auto s : opt.paths)
         {
             fs::path absolute_path = fs::current_path() / fs::path(s);

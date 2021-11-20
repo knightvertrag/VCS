@@ -14,6 +14,7 @@ namespace imperium
         fs::path _lock_path;
         int _lock;
         LockFile() = default;
+        // Append ".lock" to path and set _lock_path and _file_path
         LockFile(fs::path path);
         /**
          * Attempt to acquire lock. Returns false if lockfile already exists,
