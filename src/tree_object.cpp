@@ -2,6 +2,7 @@
 #include "imperium_object.h"
 #include "blob_object.h"
 #include "repository.h"
+#include "index.h"
 
 #include <stddef.h>
 #include <filesystem>
@@ -184,39 +185,16 @@ Treeobject *Treeobject::build(std::vector<TreeLeaf> &__entries)
     return root;
 }
 
-std::string Treeobject::construct_tree(std::vector<fs::path> paths)
+std::string Treeobject::construct_tree()
 {
-    auto repo = repo_find();
-    if (paths[0] == ".")
-    {
-        paths[0] = repo.worktree;
-    }
+    Repository repo = repo_find();
     std::vector<TreeLeaf> entries;
-    for (auto path : paths)
+    Index index(repo.impDir / "index");
+    index.read_index();
+    for (auto &[key, entry] : index._entries)
     {
-        if (fs::is_regular_file(repo.worktree / path))
-        {
-            path = repo.worktree / path;
-            std::string sha = Blobobject::blob_from_file(path);
-            entries.push_back(TreeLeaf(file_mode(path), path, sha));
-        }
-        else
-        {
-            for (auto p = fs::recursive_directory_iterator(path);
-                 p != fs::recursive_directory_iterator();
-                 p++)
-            {
-                if (fs::is_regular_file(p->path()))
-                {
-                    std::string sha = Blobobject::blob_from_file(p->path());
-                    entries.push_back(TreeLeaf(file_mode(p->path()), p->path(), sha));
-                }
-                if (p->path() == repo.impDir)
-                {
-                    p.disable_recursion_pending();
-                }
-            }
-        }
+        auto path = repo.worktree / entry._path;
+        entries.push_back(TreeLeaf(file_mode(path), path, entry._sha));
     }
     auto root = Treeobject::build(entries);
     std::string sha = root->traverse();

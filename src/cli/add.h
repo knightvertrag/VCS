@@ -20,9 +20,33 @@ namespace imperium
     {
         Repository repo = repo_find();
         imperium::Index index(repo.impDir / "index");
-        auto path = fs::path(opt.paths[0]);
-        auto oid = Blobobject::blob_from_file(repo.worktree / path);
-        index.add(path, oid);
+        index.load_for_update();
+        for (auto s : opt.paths)
+        {
+            fs::path absolute_path = fs::current_path() / fs::path(s);
+            if (fs::is_regular_file(absolute_path))
+            {
+                auto oid = Blobobject::blob_from_file(absolute_path);
+                index.add(fs::relative(absolute_path, repo.worktree), oid);
+            }
+            else
+            {
+                for (auto p = fs::recursive_directory_iterator(absolute_path);
+                     p != fs::recursive_directory_iterator();
+                     p++)
+                {
+                    if (fs::is_regular_file(p->path()))
+                    {
+                        auto oid = Blobobject::blob_from_file(p->path());
+                        index.add(fs::relative(p->path(), repo.worktree), oid);
+                    }
+                    if (fs::canonical(p->path()) == repo.impDir) // imperiumignore will generalize this
+                    {
+                        p.disable_recursion_pending();
+                    }
+                }
+            }
+        }
         index.write_updates();
         index.end_write();
     }

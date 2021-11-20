@@ -4,6 +4,7 @@
 #include <memory>
 #include <CLI11.hpp>
 #include <repository.h>
+#include <refs.h>
 
 namespace imperium
 {
@@ -14,7 +15,11 @@ namespace imperium
 
     inline void runCommit(CommitOptions &op)
     {
+        Repository repo = repo_find();
         std::shared_ptr<Commitobject> obj = std::make_shared<Commitobject>(op.message);
+        auto commit_hash = object_write(*obj);
+        auto refs = Refs(repo.impDir);
+        refs.update_head(commit_hash);
         std::cout << object_write(*obj) << "\n";
     }
 
