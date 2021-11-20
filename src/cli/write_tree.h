@@ -18,7 +18,7 @@ namespace imperium
 
     inline void runWriteTree(WriteTreeOptions const &op)
     {
-        std::cout << Treeobject::construct_tree(op.paths) << "\n";
+        std::cout << Treeobject::construct_tree() << "\n";
     }
 
     inline void setupWriteTree(CLI::App &app)

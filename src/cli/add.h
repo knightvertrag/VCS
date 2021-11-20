@@ -40,7 +40,7 @@ namespace imperium
                         auto oid = Blobobject::blob_from_file(p->path());
                         index.add(fs::relative(p->path(), repo.worktree), oid);
                     }
-                    if (p->path() == repo.impDir) // imperiumignore will generalize this
+                    if (fs::canonical(p->path()) == repo.impDir) // imperiumignore will generalize this
                     {
                         p.disable_recursion_pending();
                     }

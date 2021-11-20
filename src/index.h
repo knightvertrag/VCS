@@ -32,7 +32,7 @@ namespace imperium
 
         /*****************Serializers*****************/
 
-        // Add an entry to m_entries
+        // Add an entry to _entries
         void add(const fs::path &__path, std::string &__sha);
         // Serialize entries by writing to a stingstream
         bool write_updates();
@@ -46,9 +46,10 @@ namespace imperium
         // read the index file
         void read_index();
 
-    private:
         // map entries to their paths
-        std::map<std::string, Entry> m_entries;
+        std::map<std::string, Entry> _entries;
+
+    private:
         LockFile m_lock_file;
     };
     /*

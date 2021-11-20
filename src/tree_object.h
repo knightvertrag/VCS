@@ -68,6 +68,6 @@ namespace imperium
         /**
          * This is just a convenience method for testing commits, will be removed when INDEX is added
          */
-        static std::string construct_tree(std::vector<fs::path> paths);
+        static std::string construct_tree();
     };
 } // namespace imperium

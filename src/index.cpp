@@ -81,7 +81,7 @@ Index::Entry::Entry(const fs::path &__path, std::string &__sha) : _path(__path),
 void Index::add(const fs::path &__path, std::string &__sha)
 {
     Index::Entry entry{__path, __sha};
-    m_entries[entry._path.generic_string()] = entry;
+    _entries[entry._path.generic_string()] = entry;
 }
 
 /************************************************Serializing************************************************/
@@ -178,8 +178,8 @@ bool Index::write_updates()
 {
     std::ostringstream update;
 
-    write_header(m_entries.size(), update);
-    for (auto &[key, entry] : m_entries)
+    write_header(_entries.size(), update);
+    for (auto &[key, entry] : _entries)
     {
         update << entry;
     }
@@ -342,7 +342,7 @@ void Index::read_index()
         {
             Index::Entry e;
             index_file >> e;
-            m_entries[e._path] = e;
+            _entries[e._path] = e;
         }
     }
 }
