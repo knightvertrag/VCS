@@ -66,7 +66,7 @@ namespace imperium
          */
         static Treeobject *build(std::vector<TreeLeaf> &__entries);
         /**
-         * This is just a convenience method for testing commits, will be removed when INDEX is added
+         * Read from the index and construct root tree for current commit
          */
         static std::string construct_tree();
     };

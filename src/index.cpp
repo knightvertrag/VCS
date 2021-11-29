@@ -13,8 +13,8 @@
 #include <memory>
 #include <sstream>
 #include <cstdint>
+#include <openssl/sha.h>
 #include <boost/algorithm/hex.hpp>
-#include <boost/compute/detail/sha1.hpp>
 
 #include <arpa/inet.h>
 #include <sys/stat.h>
@@ -50,7 +50,7 @@ Index::Entry::Entry(const fs::path &__path, std::string &__sha) : _path(__path),
     stat(absolute_path.c_str(), &_stat);
     if (_stat.st_mode & S_IEXEC)
         _stat.st_mode = Index::EXECUTABLE_MODE;
-    if (_stat.st_mode & S_IFREG)
+    else if (_stat.st_mode & S_IFREG)
         _stat.st_mode = Index::REGULAR_MODE;
     _flags.assume_valid = 0;
     _flags.stage = 0;
@@ -163,9 +163,10 @@ void write_entry_sha(const std::string &__sha, std::ostringstream &__stream)
 
 void write_index_sha(std::ostringstream &__stream)
 {
-    std::string index_sha = boost::compute::detail::sha1(__stream.str());
-    auto index_sha_bytes = boost::algorithm::unhex(index_sha);
-    __stream.write(index_sha_bytes.c_str(), 20);
+    std::string data = __stream.str();
+    unsigned char buf[20];
+    SHA1((unsigned char *)data.c_str(), data.size(), buf);
+    __stream.write((char *)buf, 20);
 }
 
 void write_header(int __n_entries, std::ostringstream &__stream)

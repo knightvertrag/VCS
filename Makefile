@@ -5,7 +5,7 @@ BIN		:= ./bin
 SRC		:= ./src
 INCLUDE	:= ./include 
 LIB		:= ./lib/
-LIBRARIES	:= -l:libboost_program_options.a -l:libboost_iostreams.a -lz
+LIBRARIES	:= -lz -lssl -lcrypto
 EXECUTABLE	:= imperium
 
 

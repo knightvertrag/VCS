@@ -9,7 +9,7 @@ namespace imperium
 {
     /**
      * Abstract class to provide an interface for the concrete object types
-    */
+     */
     class Impobject
     {
     public:
@@ -25,37 +25,37 @@ namespace imperium
 
     /**
      * Read the object file whose sha is provided.
-     * 
+     *
      * @param repo Repository whose Impobjects need to be read
      * @param sha SHA-1 to extract path
      * @return Pointer of Impobject required
-    */
-    Impobject *object_read(Repository repo, std::string sha);
+     */
+    Impobject *object_read(Repository &repo, const std::string &sha);
 
     /**
      * Serialize provided object, compress and write to object database. Returns the SHA-1 checksum.
-     * 
+     *
      * @param obj Reference to the object being written
      * @param actually_write Default = true. If false return sha and exit
-     * @return SHA-1 Checksum of the contents 
-    */
+     * @return SHA-1 Checksum of the contents
+     */
     std::string object_write(Impobject &obj, bool actually_write = true);
 
     /**
      * Parse data of format key-value pairs and a message. Used in parsing commits and tags.
-     * 
+     *
      * @param data Raw string to be parsed
      * @return Parsed map
-    */
-    std::map<std::string, std::string> kv_parse(std::string data);
+     */
+    std::map<std::string, std::string> kv_parse(const std::string &data);
 
     /**
      * Serialize key-value pairs. Used for serializing commits and tags.
-     * 
+     *
      * @param kv map to be serialized
      * @param order Order in which key-values need to appear, as it seems to matter in Git
      * @return Serialized string
-    */
-    std::string kv_serialize(std::map<std::string, std::string> kv, std::vector<std::string> order);
+     */
+    std::string kv_serialize(std::map<std::string, std::string> &kv, std::vector<std::string> &order);
 
 } // namespace imperium
