@@ -11,7 +11,7 @@
 #include <ordered_map.h>
 #include <variant>
 #include <utility>
-#include <boost/algorithm/hex.hpp>
+#include <util.h>
 
 using namespace imperium;
 namespace fs = std::filesystem;
@@ -47,7 +47,7 @@ std::pair<uint32_t, TreeLeaf> parse_one(std::string &raw, uint32_t start)
     size_t null_pos = raw.find('\0', space_pos);
     std::string mode = raw.substr(start, space_pos - start);
     fs::path path = raw.substr(space_pos + 1, null_pos - space_pos);
-    std::string sha = boost::algorithm::hex_lower(raw.substr(null_pos + 1, 20));
+    std::string sha = vertrag::algorithm::hex(raw.substr(null_pos + 1, 20));
     return {null_pos + 21, TreeLeaf(mode, path, sha)};
 }
 
@@ -98,7 +98,7 @@ std::string Treeobject::serialize()
         res += " ";
         res += item.path.filename();
         res += '\0';
-        res += boost::algorithm::unhex(item.sha);
+        res += vertrag::algorithm::unhex(item.sha);
     }
     data = res;
     return res;

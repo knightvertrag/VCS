@@ -3,7 +3,10 @@
 #include "lockfile.h"
 
 #include <iostream>
+#include <vector>
+#include <unordered_set>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <filesystem>
 #include <sys/stat.h>
@@ -48,9 +51,18 @@ namespace imperium
 
         // map entries to their paths
         std::map<std::string, Entry> _entries;
+        // store folders and map them to entries under them.
+        // This will make deleting entries easier as we can directly get all the entries
+        // that need to be deleted if we delete a folder
+        std::unordered_map<std::string, std::unordered_set<std::string>> _parents;
 
     private:
         LockFile m_lock_file;
+
+        void store_entry(const Entry &__entry);
+        void remove_entry(const std::string &__path);
+        void remove_children(const std::string &__path);
+        void discard_conflicts(const Entry &__entry);
     };
     /*
         Entry Format
@@ -66,9 +78,11 @@ namespace imperium
         32-bit gid
         32-bit file size
         {
-            2-byte set of flags(onr byte contains length of file pathname)
-            file pathname
-        } -> padded with zeroes to get multiple of 8
+            2 byte set of flags with following format:
+            assume-valid extended stage name_length
+            1         1         2      12
+            0         0        00   000000000000
+        } -> padded with zeroes to make entry length multiple of 8
         20-byte hash of index contents
     */
     class Index::Entry
@@ -90,6 +104,9 @@ namespace imperium
         Entry(const Entry &__other);
         Entry &operator=(const Entry &__other);
         Entry(const fs::path &__path, std::string &__sha);
+
+        // return all parent paths of _path of current entry
+        std::vector<std::string> parent_dirs();
 
         // Serialize and put the __entry in __stream
         friend std::ostringstream &operator<<(std::ostringstream &__stream, Index::Entry &__entry);

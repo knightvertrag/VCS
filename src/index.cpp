@@ -6,42 +6,21 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <filesystem>
 #include <memory>
 #include <sstream>
 #include <cstdint>
-#include <boost/algorithm/hex.hpp>
-#include <boost/compute/detail/sha1.hpp>
+#include <util.h>
+#include <openssl/sha.h>
 
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
 using namespace imperium;
 namespace fs = std::filesystem;
-
-// Check if the host processor is big endian
-// bool is_big_endian()
-// {
-//     unsigned int x = 1;
-//     auto c = reinterpret_cast<char *>(&x);
-//     if (*c)
-//         return false;
-//     return true;
-// }
-
-// swap endianess of 4byte/32bit integer
-// void swap_endian(unsigned int &x)
-// {
-//     int lmost = (x & 0x000000FF) >> 0;
-//     int lmid = (x & 0x0000FF00) >> 8;
-//     int rmid = (x & 0x00FF0000) >> 16;
-//     int rmost = (x & 0xFF000000) >> 24;
-//     lmost <<= 24;
-//     lmid <<= 16;
-//     rmid <<= 8;
-//     rmost <<= 0;
-//     x = lmost | lmid | rmid | rmost;
-// }
 
 Index::Entry::Entry(const Entry &__other)
 {
@@ -71,17 +50,66 @@ Index::Entry::Entry(const fs::path &__path, std::string &__sha) : _path(__path),
     stat(absolute_path.c_str(), &_stat);
     if (_stat.st_mode & S_IEXEC)
         _stat.st_mode = Index::EXECUTABLE_MODE;
-    if (_stat.st_mode & S_IFREG)
+    else if (_stat.st_mode & S_IFREG)
         _stat.st_mode = Index::REGULAR_MODE;
     _flags.assume_valid = 0;
     _flags.stage = 0;
     _flags.file_name_length = std::min(MAX_PATH_SIZE, __path.generic_string().size());
 }
 
+void Index::remove_children(const std::string &__path)
+{
+    auto set = _parents[__path];
+    for (auto &i : set)
+    {
+        // _entries.erase(i);
+        remove_entry(i);
+    }
+}
+
+void Index::remove_entry(const std::string &__path)
+{
+    Entry e = _entries[__path];
+    _entries.erase(__path);
+    auto parents = e.parent_dirs();
+    for (auto &p : parents)
+    {
+        _parents[p].erase(e._path.generic_string());
+        if (_parents[p].empty())
+            _parents.erase(p);
+    }
+}
+
+void Index::discard_conflicts(const Entry &__entry)
+{
+    fs::path path = __entry._path;
+    // file replaced with directory conflict
+    while (!path.empty())
+    {
+        // _entries.erase(path.parent_path().generic_string());
+        remove_entry(path.parent_path().generic_string());
+        path = path.parent_path();
+    }
+    // directory replaced with file conflict
+    remove_children(__entry._path.generic_string());
+}
+
+void Index::store_entry(const Index::Entry &__entry)
+{
+    _entries[__entry._path.generic_string()] = __entry;
+    auto path = __entry._path.parent_path();
+    while (!path.empty())
+    {
+        _parents[path.generic_string()].insert(__entry._path.generic_string());
+        path = path.parent_path();
+    }
+}
+
 void Index::add(const fs::path &__path, std::string &__sha)
 {
     Index::Entry entry{__path, __sha};
-    _entries[entry._path.generic_string()] = entry;
+    discard_conflicts(entry);
+    store_entry(entry);
 }
 
 /************************************************Serializing************************************************/
@@ -129,15 +157,16 @@ void write_file_name(const std::string &__file_name, std::ostringstream &__strea
 
 void write_entry_sha(const std::string &__sha, std::ostringstream &__stream)
 {
-    auto oid = boost::algorithm::unhex(__sha);
+    auto oid = vertrag::algorithm::unhex(__sha);
     __stream.write(oid.c_str(), 20);
 }
 
 void write_index_sha(std::ostringstream &__stream)
 {
-    std::string index_sha = boost::compute::detail::sha1(__stream.str());
-    auto index_sha_bytes = boost::algorithm::unhex(index_sha);
-    __stream.write(index_sha_bytes.c_str(), 20);
+    std::string data = __stream.str();
+    unsigned char buf[20];
+    SHA1((unsigned char *)data.c_str(), data.size(), buf);
+    __stream.write((char *)buf, 20);
 }
 
 void write_header(int __n_entries, std::ostringstream &__stream)
@@ -247,7 +276,7 @@ void read_entry_sha(std::ifstream &__stream, Index::Entry &__entry)
     {
         bytes.push_back(buffer[i]);
     }
-    auto sha = boost::algorithm::hex_lower(bytes);
+    auto sha = vertrag::algorithm::hex(bytes);
     __entry._sha = sha;
 }
 
@@ -322,6 +351,18 @@ namespace imperium
     }
 }
 
+std::vector<std::string> Index::Entry::parent_dirs()
+{
+    std::vector<std::string> res;
+    auto path = _path;
+    while (!path.empty())
+    {
+        res.push_back(path.parent_path().generic_string());
+        path = path.parent_path();
+    }
+    return res;
+}
+
 void Index::load_for_update()
 {
     if (m_lock_file.hold_for_update())
@@ -342,7 +383,7 @@ void Index::read_index()
         {
             Index::Entry e;
             index_file >> e;
-            _entries[e._path] = e;
+            store_entry(e);
         }
     }
 }
