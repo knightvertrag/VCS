@@ -13,8 +13,8 @@
 #include <memory>
 #include <sstream>
 #include <cstdint>
+#include <util.h>
 #include <openssl/sha.h>
-#include <boost/algorithm/hex.hpp>
 
 #include <arpa/inet.h>
 #include <sys/stat.h>
@@ -157,7 +157,7 @@ void write_file_name(const std::string &__file_name, std::ostringstream &__strea
 
 void write_entry_sha(const std::string &__sha, std::ostringstream &__stream)
 {
-    auto oid = boost::algorithm::unhex(__sha);
+    auto oid = vertrag::algorithm::unhex(__sha);
     __stream.write(oid.c_str(), 20);
 }
 
@@ -276,7 +276,7 @@ void read_entry_sha(std::ifstream &__stream, Index::Entry &__entry)
     {
         bytes.push_back(buffer[i]);
     }
-    auto sha = boost::algorithm::hex_lower(bytes);
+    auto sha = vertrag::algorithm::hex(bytes);
     __entry._sha = sha;
 }
 

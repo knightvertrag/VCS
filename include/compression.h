@@ -26,21 +26,17 @@ namespace vertrag
             int ret;
             char outputbuffer[50000];
             std::string outstring;
-            // int bytes_written = 0;
+
             do
             {
                 zs.next_out = reinterpret_cast<Bytef *>(outputbuffer);
                 zs.avail_out = sizeof(outputbuffer);
 
                 ret = deflate(&zs, Z_FINISH);
-                // int bytes_written_this_iter = 0;
-                // if (bytes_written < zs.total_out)
+
                 if (outstring.size() < zs.total_out)
                 {
-                    // bytes_written_this_iter = zs.total_out - bytes_written;
-                    // bytes_written = zs.total_out;
                     outstring.append(outputbuffer, zs.total_out - outstring.size());
-                    // file.write(outputbuffer, bytes_written_this_iter);
                 }
 
             } while (ret == Z_OK);

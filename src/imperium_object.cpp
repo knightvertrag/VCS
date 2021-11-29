@@ -12,7 +12,7 @@
 #include <map>
 #include <set>
 #include <iostream>
-#include <boost/algorithm/hex.hpp>
+#include <util.h>
 
 namespace fs = std::filesystem;
 
@@ -24,7 +24,7 @@ std::string sha1(const std::string &str)
     SHA1((unsigned char *)str.c_str(), str.size(), sha1);
     for (int i = 0; i < 20; i++)
         buf.push_back(sha1[i]);
-    std::string sha = boost::algorithm::hex_lower(buf);
+    std::string sha = vertrag::algorithm::hex(buf);
     return sha;
 }
 
