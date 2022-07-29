@@ -65,6 +65,15 @@ namespace imperium
          * @return root tree object
          */
         static Treeobject *build(std::vector<TreeLeaf> &__entries);
+
+        /**
+         * Recursively build a Treeobject in memory from object id
+         *
+         * @param sha object id of tree object
+         * @return Treeobject built out
+         */
+        static Treeobject *build(const std::string &sha, std::vector<std::string> &parents);
+
         /**
          * Read from the index and construct root tree for current commit
          */

@@ -6,22 +6,33 @@ A version control systems trying to replicate what git does.
 
 ## Setup the project
 
+The project uses cmake to generate its build system and openssl for SHA1 hashing, so you will need these installed on your system 
+before you build the executable.
+
+Install cmake and openssl
+
+```bash
+sudo apt install cmake libssl-dev
+```
+
 Clone the project
 
 ```bash
 git clone https://github.com/knightvertrag/VCS
 ```
-
-
-Once the project directory has been set up, run the following command to build the binary in the `bin` directory.
+Execute the following commands to build the binary
 
 ```bash
-make
+mkdir build
+cd build
+cmake ../
+cmake --build .
 ```
 
-Run the following commands to display all the available commands
+A binary `imperium` will be built, which you can now use to version control.
+
+Run the following command to display all the available commands
 
 ```bash
-cd bin
 ./imperium -h
 ```
