@@ -5,6 +5,7 @@
 #include "index.h"
 
 #include <stddef.h>
+#include <fstream>
 #include <filesystem>
 #include <memory>
 #include <map>
@@ -183,6 +184,25 @@ Treeobject *Treeobject::build(std::vector<TreeLeaf> &__entries)
         root->add_entry(pdirs, e);
     }
     return root;
+}
+
+Treeobject *Treeobject::build(const std::string &sha, std::vector<std::string> &parents)
+{
+    auto tree = new Treeobject();
+    auto path = tree->repo.impDir / sha.substr(0, 2) / sha.substr(2);
+    std::ifstream file(path, std::ios::in);
+    std::string data;
+    file >> data;
+    std::vector<TreeLeaf> entries = parse_tree(data);
+    for (auto &&entry : entries)
+    {
+        if (entry.mode == "04000")
+        {
+        }
+        else
+        {
+        }
+    }
 }
 
 std::string Treeobject::construct_tree()
