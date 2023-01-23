@@ -179,10 +179,10 @@ void write_header(int __n_entries, std::ostringstream &__stream)
 
 void write_stat_bytes(Index::Entry &__entry, std::ostringstream &__stream)
 {
-    write_int_item(__entry._stat.st_ctim.tv_sec, __stream);
-    write_int_item(__entry._stat.st_ctim.tv_nsec, __stream);
-    write_int_item(__entry._stat.st_mtim.tv_sec, __stream);
-    write_int_item(__entry._stat.st_mtim.tv_nsec, __stream);
+    write_int_item(__entry._stat.st_ctimespec.tv_sec, __stream);
+    write_int_item(__entry._stat.st_ctimespec.tv_nsec, __stream);
+    write_int_item(__entry._stat.st_mtimespec.tv_sec, __stream);
+    write_int_item(__entry._stat.st_mtimespec.tv_nsec, __stream);
     write_int_item(__entry._stat.st_dev, __stream);
     write_int_item(__entry._stat.st_ino, __stream);
     write_int_item(__entry._stat.st_mode, __stream);
@@ -253,10 +253,10 @@ void read_stat(std::ifstream &__stream, Index::Entry &__entry)
         auto item = ntohl(*x);
         stat.push_back(item);
     }
-    __entry._stat.st_ctim.tv_sec = stat[0];
-    __entry._stat.st_ctim.tv_nsec = stat[1];
-    __entry._stat.st_mtim.tv_sec = stat[2];
-    __entry._stat.st_mtim.tv_nsec = stat[3];
+    __entry._stat.st_mtimespec.tv_sec = stat[0];
+    __entry._stat.st_ctimespec.tv_nsec = stat[1];
+    __entry._stat.st_mtimespec.tv_sec = stat[2];
+    __entry._stat.st_mtimespec.tv_nsec = stat[3];
     __entry._stat.st_dev = stat[4];
     __entry._stat.st_ino = stat[5];
     __entry._stat.st_mode = stat[6];
